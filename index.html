@@ -112,6 +112,17 @@
   .keys .h{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.04em;margin-bottom:8px}
   .keys p{margin:0;font-size:14px;color:var(--muted)}
 
+  /* eval deep-dive */
+  .eval-list{margin-top:52px;border-top:1px solid var(--line)}
+  .eval-row{display:grid;grid-template-columns:180px 1fr;gap:40px;padding:30px 0;border-bottom:1px solid var(--line-soft)}
+  .eval-k{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--amber);padding-top:5px}
+  .eval-body h3{font-size:18px;font-weight:600;margin:0 0 8px;letter-spacing:-.01em}
+  .eval-body .lead{font-size:13.5px;color:var(--muted);margin:0 0 14px;max-width:62ch}
+  .eval-body ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px 30px}
+  .eval-body li{font-size:13.5px;color:var(--muted);line-height:1.5;padding-left:15px;position:relative}
+  .eval-body li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--faint)}
+  .eval-body li b{color:var(--fg);font-weight:600}
+
   .quote{padding:96px 0;text-align:left}
   .quote blockquote{margin:0;font-size:clamp(26px,4vw,46px);line-height:1.22;letter-spacing:-.025em;font-weight:600;max-width:20ch}
   .quote blockquote span{color:var(--amber)}
@@ -132,6 +143,8 @@
     .pipe{grid-template-columns:1fr 1fr}
     .pipe .step:nth-child(2n){border-right:0}
     .keys{grid-template-columns:1fr;gap:20px}
+    .eval-row{grid-template-columns:1fr;gap:12px;padding:24px 0}
+    .eval-body ul{grid-template-columns:1fr}
   }
   @media(max-width:520px){
     .wrap{padding:0 18px}
@@ -253,10 +266,52 @@
         <div class="step" role="listitem"><div class="i">07</div><div class="t">决策</div><div class="d">p&lt;.05 且 d≥.5</div></div>
       </div>
 
-      <div class="keys">
-        <div><div class="h">门槛要预注册</div><p>60 对由 α=0.05、power=0.8、d=0.5 的功效分析算出，开跑前锁进 registration.json；样本不足只报方向性信号。</p></div>
-        <div><div class="h">判分要可单测</div><p>judge 抽成零 IO 纯函数，22-check 守卫覆盖静默缺陷，四道残片守卫堵住「假完成 → 零评分」。</p></div>
-        <div><div class="h">局限要诚实讲</div><p>TC-11 是多层正则 + 运行时 fail-closed，不是 AST；「绿 ≠ 已证明安全」，盲点靠运行时兜底。</p></div>
+      <div class="eval-list">
+        <div class="eval-row">
+          <div class="eval-k">数据管线设施</div>
+          <div class="eval-body">
+            <h3>一套可复现的评测数据管线</h3>
+            <p class="lead">评测不是跑一次脚本，而是一条可重放的数据管线：任务打包、独立执行、指标落盘、台账可追溯。</p>
+            <ul>
+              <li><b>Harbor 任务格式</b> — 任务打包 + record/replay，评测可重放</li>
+              <li><b>独立 eval 队列</b> — apex-eval task queue + 独立 schema，不触生产</li>
+              <li><b>指标三平面</b> — Pushgateway（harborEval*）+ Prometheus + Langfuse</li>
+              <li><b>驱动与分析</b> — eval skeleton + registration.json + analyze.ipynb</li>
+              <li><b>批次治理</b> — 批次 tag + fail-loud，缺臂 / 污染直接踢出</li>
+              <li><b>可追溯台账</b> — 191 行，每个结论能回到批次 / 臂 / trace</li>
+            </ul>
+          </div>
+        </div>
+        <div class="eval-row">
+          <div class="eval-k">评测标准</div>
+          <div class="eval-body">
+            <h3>金标准 + 五阶段 rubric</h3>
+            <p class="lead">金标准不是「模型会不会做题」，而是「模型经 harness 能否复现 Apex 生产级框架（可观测 / 可审计 / 可复现 / 持久）」。</p>
+            <ul>
+              <li><b>DD 双钻</b> — 问题空间覆盖、方案多样性、是否过早锁定</li>
+              <li><b>PP 金字塔</b> — 结论是否前置、分层清晰度、可扫读性</li>
+              <li><b>DP 设计方案</b> — 需求覆盖、与 DP 一致性、Harbor 合规</li>
+              <li><b>VM V 模型</b> — 覆盖率、rework、跳步、缺陷逃逸、首次正确率</li>
+              <li><b>CD CRISP-DM</b> — 分析有效性、数据泄漏、业务理解、可复现</li>
+              <li><b>rubric 锚点</b> — 结构门 + 覆盖点，每条锚到真实工件 file:line</li>
+            </ul>
+          </div>
+        </div>
+        <div class="eval-row">
+          <div class="eval-k">评判准确性</div>
+          <div class="eval-body">
+            <h3>让 judge 本身可验证</h3>
+            <p class="lead">判分如果「不报错只悄悄错」，分数就不可信。所以 judge 自己也要被测试、被校准、被纠错。</p>
+            <ul>
+              <li><b>零 IO 纯函数</b> — score(prompt,output)→Verdict，可单测</li>
+              <li><b>22-check 守卫</b> — 空 verdict、越界分、覆盖旧 verdict、台账未落盘</li>
+              <li><b>四道残片守卫</b> — landing 存在 / 非空 / 校验和 / score 已写</li>
+              <li><b>跨 judge 漂移 ≤0.01</b> — 同一工件换 judge 复评，分数稳定</li>
+              <li><b>失控剔除</b> — reviewer 轮帽 32，16/76 失控复审被识别并剔除</li>
+              <li><b>首跑 4/12 假收敛</b> — 正是这次教训，把「分数可信」做成质量基线</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
