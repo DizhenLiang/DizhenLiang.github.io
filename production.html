@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>生产级线上设施 · 梁迪臻</title>
-<meta name="description" content="Apex-Agent 的生产级线上设施：飞轮、6-Agent 运行时、双沙箱、自愈巡检熔断、可观测性。">
+<meta name="description" content="Apex-Agent 的生产级线上设施：飞轮、Orchestrator 运行时（36 个 specialist 角色库）、双沙箱、自愈巡检熔断、可观测性。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -35,14 +35,14 @@
         <p class="lede">线上设施要回答四个问题：任务怎么转起来、谁在干活、边界在哪、出错谁来兜。Apex-Agent 用一套可验证的机制回答它们。</p>
         <div class="actions">
           <a class="btn btn-primary" href="#flywheel">看飞轮 →</a>
-          <a class="btn btn-ghost" href="#agents">6-Agent 运行时</a>
+          <a class="btn btn-ghost" href="#agents">运行时模型</a>
         </div>
       </div>
       <div class="trace" aria-hidden="true">
         <div class="trace-head"><span>FACILITY STATUS</span><span class="live"><i></i>ONLINE</span></div>
         <div class="trace-body">
           <div class="trow"><span class="idx">01</span><span class="act">flywheel</span><span class="detail">任务 → 工作区 → 执行 → 评测 → 回流</span><span class="st ok">up</span></div>
-          <div class="trow"><span class="idx">02</span><span class="act">runtime</span><span class="detail">6-Agent · 边界清晰 · 各司其职</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">runtime</span><span class="detail">Orchestrator 内核 · Temporal 权威 · 36 specialist 库</span><span class="st ok">up</span></div>
           <div class="trow"><span class="idx">03</span><span class="act">sandbox</span><span class="detail">bubblewrap + Harbor · 物理隔离</span><span class="st ok">up</span></div>
           <div class="trow"><span class="idx">04</span><span class="act">guard</span><span class="detail">重试 · watchdog · 巡检 · 熔断</span><span class="st ok">up</span></div>
           <div class="trow now"><span class="idx">05</span><span class="act">observe</span><span class="detail">三平面指标 · 全量日志 · 异常上报</span><span class="st run">live</span></div>
@@ -61,7 +61,7 @@
       <div class="steps reveal">
         <div class="step"><div class="sn">01</div><div><h4>任务定义</h4><p>把模糊需求翻译成可验收的任务：边界、约束、验收标准。任务本身是可执行、可复现的工件，不是一句话。</p></div></div>
         <div class="step"><div class="sn">02</div><div><h4>隔离工作区</h4><p>每个任务一个干净工作区，bubblewrap 限制文件系统 / 网络 / 进程。上一轮的残留不会污染下一轮。</p></div></div>
-        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p>6-Agent 运行时协作：拆解、执行、探测、评审、规划、验证，各自边界清晰，输出可追溯。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p><strong>apexOrchestrator</strong> 内核跑 Plan-Execute-Review：先规划、再执行、后评审。执行层经 Temporal child workflow 并行扇出，按任务需要调起 36 个 specialist 角色，输出可追溯。</p></div></div>
         <div class="step"><div class="sn">04</div><div><h4>独立评测</h4><p>评测器与被测代码物理隔离，跑在 Harbor 沙箱里；评分按五阶段 rubric，锚到 <code>file:line</code>。</p></div></div>
         <div class="step"><div class="sn">05</div><div><h4>数据回流</h4><p>轨迹、指标、经验回流成下一轮的任务与规则。跑得越多，飞轮越稳。</p></div></div>
       </div>
@@ -71,16 +71,17 @@
   <section class="section" id="agents">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">02 / Runtime</div><h2>6-Agent 运行时。</h2></div>
-        <p class="note">不是一个大模型包打天下，而是六个角色各管一段：谁拆、谁做、谁探、谁评、谁规划、谁验证。</p>
+        <div><div class="overline">02 / Runtime</div><h2>运行时：一个内核，一个权威，三十六个角色。</h2></div>
+        <p class="note">不是六个写死的角色，而是一套可调度的运行时：一个 Orchestrator 内核跑 Plan-Execute-Review，Temporal 做唯一执行权威，36 个 specialist 定义是可委派的角色库。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">Delegator</div><h3>拆解与分派</h3><p>把任务拆成有边界的子任务，分给合适的角色，并维护依赖顺序。</p></div>
-        <div class="card"><div class="k">Worker</div><h3>执行</h3><p>在隔离工作区里动手：读代码、改文件、跑命令、拿结果。</p></div>
-        <div class="card"><div class="k">Prober</div><h3>探针</h3><p>构造行为测试与边界用例，判断「改没改对、覆没覆盖」。</p></div>
-        <div class="card"><div class="k">Reviewer</div><h3>评审</h3><p>按 rubric 独立评分，给出可定位的问题，而不是一句「感觉不对」。</p></div>
-        <div class="card"><div class="k">Planner</div><h3>规划</h3><p>在长任务里维持全局目标，防止走偏、跳步、重复劳动。</p></div>
-        <div class="card"><div class="k">Verifier</div><h3>验证</h3><p>用检查器 / 构建 / 契约做最终判定，守最后一道门。</p></div>
+        <div class="card"><div class="k">Orchestrator 内核</div><h3>apexOrchestrator</h3><p>跑 Plan-Execute-Review 循环：先规划、再执行、后评审。每个工具决策都经 Temporal 派发，是唯一的「控制大脑」。</p></div>
+        <div class="card"><div class="k">Temporal 执行权威</div><h3>恰好一次副作用</h3><p>执行层用 child workflow 并行扇出，Activity 保证副作用恰好一次；Workflow 重放提供崩溃恢复，Temporal 是唯一事实源。</p></div>
+        <div class="card"><div class="k">36 个 specialist 定义</div><h3>角色库，非写死</h3><p>仓库内置 36 个 agent 定义（<code>.claude/agents/</code>）：analyst / architect / executor / planner / verifier / reviewer / debugger … 按需被调起，不固定为六个。</p></div>
+      </div>
+      <div class="rows reveal" style="margin-top:18px">
+        <div class="row"><div class="rk">入口守卫</div><div class="rv"><strong>dispatchIngress</strong>：默认拒绝的白名单单接入点，外部流量只经它直交 Temporal，不中转、不在入口扇出。</div></div>
+        <div class="row"><div class="rk">单写权威（TC-11）</div><div class="rv">业务只写 Temporal 一处；PostgreSQL 是可由 History 重建的 CQRS 读模型，Temporal 不可达时 fail-closed，绝不静默回退 PG。</div></div>
       </div>
     </div>
   </section>
