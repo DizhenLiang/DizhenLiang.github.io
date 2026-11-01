@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>部署全流程 · 梁迪臻</title>
+<meta name="description" content="Apex-Agent 部署全流程：模板驱动、逐层解耦、7 个模板、零硬编码、多 profile 启动，从零到线上一条可重复的路径。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot"></span> 梁迪臻 <span class="sub">APEX-AGENT · LIVE</span></a>
+    <nav class="nav">
+      <a href="index.html">主页</a>
+      <a href="production.html">生产设施</a>
+      <a href="deploy.html" class="active">部署</a>
+      <a href="optimize.html">优化</a>
+      <a href="eval.html">评测</a>
+      <a href="index.html#contact" class="cta">联系</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap grid">
+      <div>
+        <div class="eyebrow">Deploy / 部署全流程</div>
+        <h1>从零到线上，<br>一条<span class="em">可重复的路径</span>。</h1>
+        <p class="lede">部署不是「跑起来就行」，而是「换个人、换个环境、隔一个月，还能一模一样地跑起来」。Apex-Agent 用模板 + 契约把这件事固化下来。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#pipeline">看 7 步流程 →</a>
+          <a class="btn btn-ghost" href="#templates">模板与解耦</a>
+        </div>
+      </div>
+      <div class="trace" aria-hidden="true">
+        <div class="trace-head"><span>DEPLOY PLAN</span><span class="live"><i></i>READY</span></div>
+        <div class="trace-body">
+          <div class="trow"><span class="idx">01</span><span class="act">env</span><span class="detail">环境准备 · 依赖版本锁定</span><span class="st ok">ok</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">config</span><span class="detail">模板渲染 · 零硬编码</span><span class="st ok">ok</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">start</span><span class="detail">多 profile 启动</span><span class="st ok">ok</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">verify</span><span class="detail">冒烟 · 契约 · 指标自检</span><span class="st run">running</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">rollback</span><span class="detail">回滚路径 · 一键回到上一版</span><span class="st">armed</span></div>
+        </div>
+        <div class="trace-foot"><span>7 steps · 5 shown</span><span>◎ 可重复</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pipeline">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">01 / Pipeline</div><h2>7 步上线流程。</h2></div>
+        <p class="note">每一步都有明确的输入、输出和失败处理；任何一步挂了，都知道停在哪、怎么退。</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step"><div class="sn">01</div><div><h4>环境准备</h4><p>锁定 Python / Node / 容器运行时版本；检查磁盘、内存、网络出口；确认沙箱能力（bubblewrap / Harbor）可用。</p></div></div>
+        <div class="step"><div class="sn">02</div><div><h4>依赖安装</h4><p>从锁文件安装，禁止隐式升级；依赖装完跑一次 import 自检，防止「装上了但用不了」。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>配置渲染</h4><p>从 7 个模板渲染出当前 profile 的配置；所有路径走配置项，代码里零硬编码。</p></div></div>
+        <div class="step"><div class="sn">04</div><div><h4>服务启动</h4><p>按 profile（dev / staging / prod）启动；启动即自报状态，不靠人盯日志猜。</p></div></div>
+        <div class="step"><div class="sn">05</div><div><h4>冒烟验证</h4><p>跑一条最小任务：能进沙箱、能出结果、能写指标、能上报异常。四件事都过才算上线。</p></div></div>
+        <div class="step"><div class="sn">06</div><div><h4>接入评测</h4><p>把新环境挂到评测队列，跑一轮基线；基线不退化才允许接真实流量。</p></div></div>
+        <div class="step"><div class="sn">07</div><div><h4>回滚预案</h4><p>保留上一版配置与镜像；回滚是一键操作，且回滚后指标自动对比。</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="templates">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">02 / Templates</div><h2>模板驱动 + 逐层解耦。</h2></div>
+        <p class="note">7 个模板覆盖任务、工作区、Agent、评测、指标、日志、部署；层与层之间只认契约，不认实现。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">7 个模板</div><h3>任务 / 工作区 / Agent / 评测 / 指标 / 日志 / 部署</h3><p>每个模板只描述「这一层要什么」，不关心别层怎么实现；换一层不影响其他层。</p></div>
+        <div class="card"><div class="k">零硬编码</div><h3>路径全部走配置</h3><p>没有写死的绝对路径，没有「在我机器上能跑」。同一套代码换目录、换机器照常工作。</p></div>
+        <div class="card"><div class="k">接口契约</div><h3>层与层只通过契约通信</h3><p>执行层、评测层、可观测层各自独立，只要契约不变，内部怎么改都行。</p></div>
+        <div class="card"><div class="k">多 profile</div><h3>dev / staging / prod 一套代码</h3><p>同一套代码，按 profile 切换配置；开发、预发、生产不维护三份分支。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="checklist">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">03 / Checklist</div><h2>上线前，逐条打勾。</h2></div>
+        <p class="note">部署的可靠性，来自「每次都不跳过同一张清单」。</p>
+      </div>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">ENV</div><div class="rv">运行时版本锁定 · 沙箱可用 · 网络出口确认 · 磁盘/内存余量 ≥ 30%</div></div>
+        <div class="row"><div class="rk">CONFIG</div><div class="rv">7 个模板全部渲染成功 · 无硬编码路径 · profile 正确 · 密钥不落盘</div></div>
+        <div class="row"><div class="rk">SMOKE</div><div class="rv">最小任务跑通 · 指标有数 · 日志有痕 · 异常能上报</div></div>
+        <div class="row"><div class="rk">EVAL</div><div class="rv">基线一轮不退化 · 评测队列连通 · rubric 版本对齐</div></div>
+        <div class="row"><div class="rk">ROLLBACK</div><div class="rv">上一版可一键回滚 · 回滚后指标自动对比 · 回滚演练过至少一次</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">Why it matters</div><h2>为什么部署值得单独讲。</h2></div>
+      </div>
+      <div class="prose reveal">
+        <p>长任务系统一旦上线，失败成本会被时间放大：跑了一夜才发现环境不对，比跑五分钟就报错贵得多。部署流程的价值，是把「环境不确定性」在上线前一次性消掉。</p>
+        <p>模板让配置可复现，契约让层可替换，profile 让环境可切换，回滚让试错可承受——四件事合起来，才叫「部署全流程」，而不是「部署脚本」。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="grid">
+      <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者</div>
+      <div class="links"><a href="index.html">主页</a><a href="production.html">生产设施</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+    </div>
+    <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
+  </div>
+</footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});els.forEach(function(e){io.observe(e)});})();
+</script>
+</body>
+</html>

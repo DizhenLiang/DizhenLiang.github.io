@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生产级线上设施 · 梁迪臻</title>
+<meta name="description" content="Apex-Agent 的生产级线上设施：飞轮、6-Agent 运行时、双沙箱、自愈巡检熔断、可观测性。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot"></span> 梁迪臻 <span class="sub">APEX-AGENT · LIVE</span></a>
+    <nav class="nav">
+      <a href="index.html">主页</a>
+      <a href="production.html" class="active">生产设施</a>
+      <a href="deploy.html">部署</a>
+      <a href="optimize.html">优化</a>
+      <a href="eval.html">评测</a>
+      <a href="index.html#contact" class="cta">联系</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap grid">
+      <div>
+        <div class="eyebrow">Production / 生产级线上设施</div>
+        <h1>生产级，<br>不是形容词，是<span class="em">一组数字</span>。</h1>
+        <p class="lede">线上设施要回答四个问题：任务怎么转起来、谁在干活、边界在哪、出错谁来兜。Apex-Agent 用一套可验证的机制回答它们。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#flywheel">看飞轮 →</a>
+          <a class="btn btn-ghost" href="#agents">6-Agent 运行时</a>
+        </div>
+      </div>
+      <div class="trace" aria-hidden="true">
+        <div class="trace-head"><span>FACILITY STATUS</span><span class="live"><i></i>ONLINE</span></div>
+        <div class="trace-body">
+          <div class="trow"><span class="idx">01</span><span class="act">flywheel</span><span class="detail">任务 → 工作区 → 执行 → 评测 → 回流</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">runtime</span><span class="detail">6-Agent · 边界清晰 · 各司其职</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">sandbox</span><span class="detail">bubblewrap + Harbor · 物理隔离</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">04</span><span class="act">guard</span><span class="detail">重试 · watchdog · 巡检 · 熔断</span><span class="st ok">up</span></div>
+          <div class="trow now"><span class="idx">05</span><span class="act">observe</span><span class="detail">三平面指标 · 全量日志 · 异常上报</span><span class="st run">live</span></div>
+        </div>
+        <div class="trace-foot"><span>5 / 5 组件在线</span><span>◎ 可回放</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="flywheel">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">01 / The Flywheel</div><h2>飞轮：五个环节咬合。</h2></div>
+        <p class="note">每一轮都把「失败」变成下一轮的「数据」。没有一次性脚本，只有持续变强的机器。</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step"><div class="sn">01</div><div><h4>任务定义</h4><p>把模糊需求翻译成可验收的任务：边界、约束、验收标准。任务本身是可执行、可复现的工件，不是一句话。</p></div></div>
+        <div class="step"><div class="sn">02</div><div><h4>隔离工作区</h4><p>每个任务一个干净工作区，bubblewrap 限制文件系统 / 网络 / 进程。上一轮的残留不会污染下一轮。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p>6-Agent 运行时协作：拆解、执行、探测、评审、规划、验证，各自边界清晰，输出可追溯。</p></div></div>
+        <div class="step"><div class="sn">04</div><div><h4>独立评测</h4><p>评测器与被测代码物理隔离，跑在 Harbor 沙箱里；评分按五阶段 rubric，锚到 <code>file:line</code>。</p></div></div>
+        <div class="step"><div class="sn">05</div><div><h4>数据回流</h4><p>轨迹、指标、经验回流成下一轮的任务与规则。跑得越多，飞轮越稳。</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="agents">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">02 / Runtime</div><h2>6-Agent 运行时。</h2></div>
+        <p class="note">不是一个大模型包打天下，而是六个角色各管一段：谁拆、谁做、谁探、谁评、谁规划、谁验证。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">Delegator</div><h3>拆解与分派</h3><p>把任务拆成有边界的子任务，分给合适的角色，并维护依赖顺序。</p></div>
+        <div class="card"><div class="k">Worker</div><h3>执行</h3><p>在隔离工作区里动手：读代码、改文件、跑命令、拿结果。</p></div>
+        <div class="card"><div class="k">Prober</div><h3>探针</h3><p>构造行为测试与边界用例，判断「改没改对、覆没覆盖」。</p></div>
+        <div class="card"><div class="k">Reviewer</div><h3>评审</h3><p>按 rubric 独立评分，给出可定位的问题，而不是一句「感觉不对」。</p></div>
+        <div class="card"><div class="k">Planner</div><h3>规划</h3><p>在长任务里维持全局目标，防止走偏、跳步、重复劳动。</p></div>
+        <div class="card"><div class="k">Verifier</div><h3>验证</h3><p>用检查器 / 构建 / 契约做最终判定，守最后一道门。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="sandbox">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">03 / Isolation</div><h2>双沙箱：执行与评测物理隔离。</h2></div>
+        <p class="note">执行沙箱管「能不能跑」，评测沙箱管「算不算对」。两个平面不共享内存、不共享文件系统。</p>
+      </div>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">执行沙箱</div><div class="rv"><strong>bubblewrap</strong>：限制文件系统、网络、进程，任务代码跑在里面，拿不到宿主环境。</div></div>
+        <div class="row"><div class="rk">评测沙箱</div><div class="rv"><strong>Harbor</strong>：被测代码跑在评测沙箱内，评测器跑在沙箱外——数据不泄漏，答案也改不了。</div></div>
+        <div class="row"><div class="rk">隔离收益</div><div class="rv">防数据泄漏、防「改评测器过题」、防跨任务污染；每个任务都是可复现的干净起点。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="guard">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">04 / Self-healing</div><h2>自愈 · 巡检 · 熔断。</h2></div>
+        <p class="note">长任务最怕的不是报错，是「静默错误」——跑完了，但结果是错的。三层兜底把它提前暴露。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">自愈</div><h3>重试 + watchdog</h3><p>失败自动重试（最多 2 次）；卡死的任务由 watchdog 超时回收，不让一个任务拖垮整条队列。</p></div>
+        <div class="card"><div class="k">巡检</div><h3>1,648 行 · 1,745 tests</h3><p>巡检代码本身被测试覆盖，检查「该有的日志有没有、该报的异常报没报、状态是否一致」。</p></div>
+        <div class="card"><div class="k">熔断</div><h3>连续 5 次失败触发</h3><p>同一类失败连续出现时自动熔断，先停、再看、再修——而不是让错误雪崩。</p></div>
+        <div class="card"><div class="k">验证</div><h3>36 次预置故障</h3><p>主动注入故障，验证「告警会不会响、回滚会不会生效、轨迹会不会留痕」。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="observe">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">05 / Observability</div><h2>可观测：三平面 + 全量日志。</h2></div>
+        <p class="note">一条轨迹要能回答：哪一步慢了、哪一步错了、哪一行代码导致的。</p>
+      </div>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">指标平面</div><div class="rv"><strong>Pushgateway</strong> 推送 + <strong>Prometheus</strong> 时序：任务吞吐、成功率、时延、成本。</div></div>
+        <div class="row"><div class="rk">追踪平面</div><div class="rv"><strong>Langfuse</strong>：LLM 调用链、token、上下文窗口，逐跳可回放。</div></div>
+        <div class="row"><div class="rk">日志平面</div><div class="rv">40/40 日志覆盖 + 40/40 异常上报；1,131 次异常上报真实落地，不是「设计里写了」。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="numbers">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">By the numbers</div><h2>线上设施的硬指标。</h2></div>
+        <p class="note">所有数字都来自真实运行，不是估算。</p>
+      </div>
+      <div class="facts reveal">
+        <div class="fact"><div class="v">1,205</div><div class="l">个任务被真实跑过</div></div>
+        <div class="fact"><div class="v">231,810</div><div class="l">次测试执行</div></div>
+        <div class="fact"><div class="v">1,131</div><div class="l">次异常上报</div></div>
+        <div class="fact"><div class="v">36</div><div class="l">次预置故障验证</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="grid">
+      <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者</div>
+      <div class="links"><a href="index.html">主页</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+    </div>
+    <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
+  </div>
+</footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});els.forEach(function(e){io.observe(e)});})();
+</script>
+</body>
+</html>

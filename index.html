@@ -1,342 +1,174 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>梁迪臻 · 长任务 Agent 运行时</title>
-<meta name="description" content="梁迪臻（Dizhen Liang）—— 构建可观测、可审计、可回放的长任务 Agent 系统。Apex-Agent 作者。">
-<style>
-  :root{
-    --bg:#0A0B0D; --surface:#111316; --line:#24272D; --line-soft:#1A1D21;
-    --fg:#E9E5DC; --muted:#8C8779; --faint:#5E5A50;
-    --amber:#E7A33C; --teal:#5FB3A1;
-    --mono:ui-monospace,"SFMono-Regular","Cascadia Code",Menlo,monospace;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-    --maxw:1180px;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.65;
-    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-  ::selection{background:var(--amber);color:#0A0B0D}
-  a{color:inherit;text-decoration:none}
-  a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
-  ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-track{background:var(--bg)}
-  ::-webkit-scrollbar-thumb{background:#2A2E35;border-radius:6px;border:2px solid var(--bg)}
-  ::-webkit-scrollbar-thumb:hover{background:#3A3F47}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
-
-  header{position:sticky;top:0;z-index:10;background:rgba(10,11,13,.82);
-    backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft)}
-  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .brand{display:flex;align-items:baseline;gap:10px}
-  .brand b{font-weight:600;letter-spacing:.02em}
-  .brand span{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.06em}
-  .links{display:flex;gap:26px}
-  .links a{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--muted);transition:color .2s ease}
-  .links a:hover{color:var(--fg)}
-
-  .hero{padding:96px 0 72px;display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
-  h1{font-size:clamp(34px,5.2vw,62px);line-height:1.08;letter-spacing:-.025em;font-weight:650;margin:0 0 22px}
-  h1 em{font-style:normal;color:var(--amber)}
-  .lede{font-size:clamp(16px,1.5vw,18.5px);color:var(--muted);max-width:46ch;margin:0 0 30px}
-  .lede b{color:var(--fg);font-weight:600}
-  .cta{display:flex;gap:14px;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border-radius:8px;
-    font-size:14.5px;font-weight:550;border:1px solid var(--line);transition:transform .18s ease,border-color .2s ease,background .2s ease}
-  .btn:hover{transform:translateY(-1px);border-color:#3A3F47}
-  .btn.primary{background:var(--fg);color:#0A0B0D;border-color:var(--fg)}
-  .btn.primary:hover{background:#fff;border-color:#fff}
-  .btn .arr{font-family:var(--mono);font-size:12px;opacity:.7}
-
-  .trace{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;
-    padding:22px 22px 18px;overflow:hidden}
-  .trace::before{content:"";position:absolute;inset:0;background:
-    radial-gradient(120% 90% at 100% 0%,rgba(231,163,60,.06),transparent 55%);pointer-events:none}
-  .trace-head{display:flex;justify-content:space-between;align-items:center;
-    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:var(--faint);margin-bottom:16px}
-  .trace-head .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);
-    margin-right:7px;box-shadow:0 0 0 4px rgba(231,163,60,.12);animation:pulse 2.4s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-  .steps{list-style:none;margin:0;padding:0;position:relative}
-  .steps::before{content:"";position:absolute;left:7px;top:10px;bottom:14px;width:1px;background:var(--line)}
-  .steps li{position:relative;padding:0 0 20px 30px}
-  .steps li:last-child{padding-bottom:0}
-  .steps .node{position:absolute;left:0;top:6px;width:15px;height:15px;border-radius:50%;
-    background:var(--bg);border:1.5px solid #3A3F47}
-  .steps li.done .node{border-color:var(--teal);background:var(--teal)}
-  .steps li.active .node{border-color:var(--amber);background:var(--amber);box-shadow:0 0 0 4px rgba(231,163,60,.15)}
-  .steps .row{display:flex;align-items:baseline;gap:12px}
-  .steps .t{font-family:var(--mono);font-size:11.5px;color:var(--faint);min-width:74px}
-  .steps .n{font-family:var(--mono);font-size:13px;color:var(--fg);letter-spacing:.02em}
-  .steps .d{font-size:13.5px;color:var(--muted);margin-top:2px}
-  .steps li.active .d{color:var(--fg)}
-  .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);
-    opacity:.5;animation:scan 4.5s cubic-bezier(.16,1,.3,1) infinite}
-  @keyframes scan{0%{top:18%;opacity:0}12%{opacity:.55}88%{opacity:.55}100%{top:92%;opacity:0}}
-  .trace-foot{display:flex;justify-content:space-between;margin-top:16px;padding-top:14px;
-    border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
-  .trace-foot .replay{color:var(--amber)}
-
-  section{border-top:1px solid var(--line-soft)}
-  .sec{padding:84px 0}
-  .sec h2{font-size:clamp(24px,3vw,34px);letter-spacing:-.02em;font-weight:620;margin:0 0 14px}
-  .sec .sub{color:var(--muted);max-width:52ch;margin:0 0 40px;font-size:15.5px}
-
-  .work{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
-  .work-main h3{font-size:clamp(22px,2.4vw,28px);margin:0 0 10px;letter-spacing:-.015em}
-  .work-main h3 .badge{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.08em;
-    border:1px solid rgba(95,179,161,.35);border-radius:5px;padding:3px 8px;margin-left:10px;vertical-align:middle}
-  .work-main p{color:var(--muted);font-size:15px;margin:0 0 18px;max-width:50ch}
-  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-soft);
-    border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
-  .facts div{background:var(--surface);padding:16px 18px}
-  .facts .v{font-family:var(--mono);font-size:22px;color:var(--fg);letter-spacing:-.02em}
-  .facts .k{font-size:12px;color:var(--faint);margin-top:3px}
-  .work-side{display:flex;flex-direction:column;gap:22px}
-  .mini{border-left:1px solid var(--line);padding-left:20px}
-  .mini h4{margin:0 0 6px;font-size:16px;font-weight:600}
-  .mini p{margin:0;color:var(--muted);font-size:14px;max-width:38ch}
-  .mini .tag{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
-
-  .pipe{display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin:8px 0 36px;
-    border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .pipe .step{padding:18px 14px;background:var(--surface);border-right:1px solid var(--line-soft);position:relative}
-  .pipe .step:last-child{border-right:0}
-  .pipe .step .i{font-family:var(--mono);font-size:11px;color:var(--faint)}
-  .pipe .step .t{font-size:14px;font-weight:600;margin-top:6px;color:var(--fg)}
-  .pipe .step .d{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45}
-  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
-  .keys div{border-top:1px solid var(--line);padding-top:16px}
-  .keys .h{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.04em;margin-bottom:8px}
-  .keys p{margin:0;font-size:14px;color:var(--muted)}
-
-  /* eval deep-dive */
-  .eval-list{margin-top:52px;border-top:1px solid var(--line)}
-  .eval-row{display:grid;grid-template-columns:180px 1fr;gap:40px;padding:30px 0;border-bottom:1px solid var(--line-soft)}
-  .eval-k{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--amber);padding-top:5px}
-  .eval-body h3{font-size:18px;font-weight:600;margin:0 0 8px;letter-spacing:-.01em}
-  .eval-body .lead{font-size:13.5px;color:var(--muted);margin:0 0 14px;max-width:62ch}
-  .eval-body ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px 30px}
-  .eval-body li{font-size:13.5px;color:var(--muted);line-height:1.5;padding-left:15px;position:relative}
-  .eval-body li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--faint)}
-  .eval-body li b{color:var(--fg);font-weight:600}
-
-  .quote{padding:96px 0;text-align:left}
-  .quote blockquote{margin:0;font-size:clamp(26px,4vw,46px);line-height:1.22;letter-spacing:-.025em;font-weight:600;max-width:20ch}
-  .quote blockquote span{color:var(--amber)}
-  .quote p{color:var(--muted);margin:26px 0 0;max-width:52ch;font-size:15px}
-
-  .contact{padding:80px 0 96px;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
-  .contact h2{font-size:clamp(24px,3vw,32px);margin:0 0 10px;letter-spacing:-.02em}
-  .contact p{color:var(--muted);margin:0}
-  .contact .mail{font-family:var(--mono);font-size:clamp(16px,2.4vw,24px);color:var(--fg);
-    border-bottom:1px solid var(--line);padding-bottom:3px;transition:border-color .2s ease,color .2s ease}
-  .contact .mail:hover{border-color:var(--amber);color:var(--amber)}
-  footer{border-top:1px solid var(--line-soft);padding:22px 0;font-family:var(--mono);
-    font-size:11.5px;color:var(--faint);display:flex;justify-content:space-between;letter-spacing:.05em}
-
-  @media(max-width:860px){
-    .hero{grid-template-columns:1fr;gap:40px;padding:64px 0 48px}
-    .work{grid-template-columns:1fr;gap:36px}
-    .pipe{grid-template-columns:1fr 1fr}
-    .pipe .step:nth-child(2n){border-right:0}
-    .keys{grid-template-columns:1fr;gap:20px}
-    .eval-row{grid-template-columns:1fr;gap:12px;padding:24px 0}
-    .eval-body ul{grid-template-columns:1fr}
-  }
-  @media(max-width:520px){
-    .wrap{padding:0 18px}
-    .links{gap:16px}
-    .pipe{grid-template-columns:1fr}
-    .pipe .step{border-right:0}
-    .facts{grid-template-columns:1fr}
-    .contact{flex-direction:column;align-items:flex-start}
-  }
-  @media(prefers-reduced-motion:reduce){
-    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-  }
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梁迪臻 · Apex-Agent</title>
+<meta name="description" content="梁迪臻，Apex-Agent 作者。一套把长任务跑成产品的生产级设施：可观测、可审计、可回放。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <div class="wrap nav">
-    <div class="brand"><b>梁迪臻</b><span>DIZHEN LIANG</span></div>
-    <nav class="links" aria-label="主导航">
-      <a href="#work">Work</a>
-      <a href="#approach">Approach</a>
-      <a href="#contact">Contact</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot"></span> 梁迪臻 <span class="sub">APEX-AGENT · LIVE</span></a>
+    <nav class="nav">
+      <a href="index.html" class="active">主页</a>
+      <a href="production.html">生产设施</a>
+      <a href="deploy.html">部署</a>
+      <a href="optimize.html">优化</a>
+      <a href="eval.html">评测</a>
+      <a href="#contact" class="cta">联系</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <div class="wrap">
-    <section class="hero" aria-labelledby="hero-title">
+  <section class="hero">
+    <div class="wrap grid">
       <div>
-        <h1 id="hero-title">把长任务做成<br><em>可回放的轨迹</em>。</h1>
-        <p class="lede">我是梁迪臻，<b>Apex-Agent</b> 的作者。我构建<strong>可观测、可审计、可回放</strong>的长任务 Agent 系统——每一步都能看见、能追溯，失败后能从断点重放，而不是从头再跑。</p>
-        <div class="cta">
-          <a class="btn primary" href="#work">查看 Apex-Agent <span class="arr">→</span></a>
-          <a class="btn" href="#approach">评测怎么做</a>
+        <div class="eyebrow">一个人 · 一套设施 · 一条可回放的轨迹</div>
+        <h1>把长任务<br>做成<span class="em">可回放的轨迹</span>。</h1>
+        <p class="lede">我是梁迪臻，Apex-Agent 的作者。我构建可观测、可审计、可复现的智能体系统——让每次执行都留下一条能回放、能定位、能从失败里变强的轨迹。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="eval.html">看评测全流程 →</a>
+          <a class="btn btn-ghost" href="#facility">了解设施架构</a>
         </div>
       </div>
-
-      <div class="trace" role="img" aria-label="执行轨迹示意：计划、执行、确认、投影四个步骤，以及失败后的确定性重放">
-        <div class="trace-head"><span><i class="dot"></i>LIVE TRACE</span><span>run · 7f3a</span></div>
-        <ol class="steps">
-          <li class="done">
-            <span class="node"></span>
-            <div class="row"><span class="t">00:00.000</span><span class="n">plan</span></div>
-            <div class="d">需求拆解为可执行步骤</div>
-          </li>
-          <li class="done">
-            <span class="node"></span>
-            <div class="row"><span class="t">00:02.418</span><span class="n">execute</span></div>
-            <div class="d">Activity 单写入口，副作用集中</div>
-          </li>
-          <li class="active">
-            <span class="node"></span>
-            <div class="row"><span class="t">00:05.902</span><span class="n">confirm</span></div>
-            <div class="d">高风险操作先确认，再执行</div>
-          </li>
-          <li>
-            <span class="node"></span>
-            <div class="row"><span class="t">—</span><span class="n">project</span></div>
-            <div class="d">派生投影：看板 / 轨迹 / 会话树</div>
-          </li>
-        </ol>
-        <div class="scan"></div>
-        <div class="trace-foot"><span>step 87 / 214</span><span class="replay">↺ 确定性重放</span></div>
-      </div>
-    </section>
-  </div>
-
-  <section id="work">
-    <div class="wrap sec">
-      <h2>代表作</h2>
-      <p class="sub">一个围绕「单权威」构建的长任务运行时，和一个把个人脚本做成企业级产品的数据平台。</p>
-
-      <div class="work">
-        <div class="work-main">
-          <h3>Apex-Agent <span class="badge">PRIVATE</span></h3>
-          <p>面向长任务的多智能体协作平台。执行权威只有一个（Temporal Workflow），其余全部是派生视图；崩溃后可确定性重放，副作用不重复执行。</p>
-          <div class="facts">
-            <div><div class="v">1,205</div><div class="k">commits</div></div>
-            <div><div class="v">231,810</div><div class="k">行 TypeScript</div></div>
-            <div><div class="v">76 × 38</div><div class="k">cells × 配对</div></div>
-            <div><div class="v">67 / 67</div><div class="k">守卫全绿</div></div>
-          </div>
+      <div class="trace" aria-hidden="true">
+        <div class="trace-head"><span>LIVE TRACE</span><span class="live"><i></i>RUNNING</span></div>
+        <div class="trace-body">
+          <div class="trow"><span class="idx">01</span><span class="act">plan</span><span class="detail">任务拆解 · 边界与验收标准</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">execute</span><span class="detail">隔离工作区 · 双沙箱</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">probe</span><span class="detail">行为测试 · 覆盖判定</span><span class="st ok">done</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">review</span><span class="detail">独立评测 · 可复现判定</span><span class="st run">running</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">verify</span><span class="detail">检查器 / 构建 / 契约</span><span class="st">queued</span></div>
         </div>
-        <div class="work-side">
-          <div class="mini">
-            <div class="tag">单权威架构</div>
-            <h4>写入方唯一，不靠约定</h4>
-            <p>Temporal Workflow 是唯一执行权威，Activity 是唯一写入口，看板 / 轨迹 / 会话树都是派生投影。</p>
-          </div>
-          <div class="mini">
-            <div class="tag">评测治理</div>
-            <h4>预注册 + 配对 A/B</h4>
-            <p>金标准锚定真实工件，双臂单变量对照，配对 Wilcoxon + Holm 校正，三平面隔离、批次 fail-loud。</p>
-          </div>
-          <div class="mini">
-            <div class="tag">数据产品</div>
-            <h4>蔡司 · 质量数据平台</h4>
-            <p>Cpk/Ppk 单一事实来源 + JSONB Schema-on-Read，看板刷新从 10–20 分钟降到秒级，覆盖百万级测量记录。</p>
-          </div>
+        <div class="trace-foot"><span>step 04 / 05</span><span>◎ 失败即轨迹</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="facility">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">The Facility / 整套设施</div><h2>不是一套代码，是一台机器。</h2></div>
+        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、隔离执行、独立评测、数据回流，四个环节咬合成一个可自我改进的飞轮。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card">
+          <div class="k">01 / 飞轮</div>
+          <h3>任务定义 → 隔离工作区 → 智能体执行 → 独立评测 → 数据回流</h3>
+          <p>五个环节咬合，每一轮都把「失败」变成下一轮的「数据」。没有一次性脚本，只有持续变强的机器。</p>
+          <div class="meta">76 任务 × 38 模块</div>
+        </div>
+        <div class="card">
+          <div class="k">02 / 双沙箱</div>
+          <h3>bubblewrap 执行沙箱 + Harbor 评测沙箱</h3>
+          <p>执行与评测物理隔离：被评测的代码跑在 Harbor 里，评测器跑在沙箱外——既不可泄漏数据，也不能被改答案。</p>
+          <div class="meta">执行 / 评测 双平面</div>
+        </div>
+        <div class="card">
+          <div class="k">03 / 自愈与巡检</div>
+          <h3>重试 · watchdog · 巡检 · 熔断</h3>
+          <p>失败自动重试，卡死由 watchdog 回收；1,648 行巡检代码 + 1,745 个测试把「静默错误」提前暴露；连续 5 次失败触发熔断。</p>
+          <div class="meta">1,131 次异常上报 · 36 次预置故障验证</div>
+        </div>
+        <div class="card">
+          <div class="k">04 / 可观测</div>
+          <h3>三平面指标 + 全量日志 + 异常上报</h3>
+          <p>Pushgateway / Prometheus / Langfuse 三平面，40/40 日志 + 40/40 异常上报；每一条轨迹都能回放到「哪一步、哪一行」。</p>
+          <div class="meta">可回放 · 可定位 · 可审计</div>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="approach">
-    <div class="wrap sec">
-      <h2>评测怎么做</h2>
-      <p class="sub">把「agent 是否变好」从主观判断变成可度量、可复述的流水线，而不是跑个 benchmark 看分数。</p>
-
-      <div class="pipe" role="list" aria-label="评测七步流水线">
-        <div class="step" role="listitem"><div class="i">01</div><div class="t">预注册</div><div class="d">SHA-256 锁口径</div></div>
-        <div class="step" role="listitem"><div class="i">02</div><div class="t">数据集</div><div class="d">gold 锚定 file:line</div></div>
-        <div class="step" role="listitem"><div class="i">03</div><div class="t">双臂</div><div class="d">单变量 · k=3</div></div>
-        <div class="step" role="listitem"><div class="i">04</div><div class="t">判分</div><div class="d">纯函数 + 22-check</div></div>
-        <div class="step" role="listitem"><div class="i">05</div><div class="t">统计</div><div class="d">Wilcoxon + Holm</div></div>
-        <div class="step" role="listitem"><div class="i">06</div><div class="t">隔离台账</div><div class="d">三平面 · fail-loud</div></div>
-        <div class="step" role="listitem"><div class="i">07</div><div class="t">决策</div><div class="d">p&lt;.05 且 d≥.5</div></div>
+  <section class="section" id="branches">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">Branches / 四条分支</div><h2>顺着设施的四个侧面往里看。</h2></div>
+        <p class="note">同一台机器，四条独立的叙事线：生产设施、部署流程、优化方案、评测全流程。</p>
       </div>
-
-      <div class="eval-list">
-        <div class="eval-row">
-          <div class="eval-k">数据管线设施</div>
-          <div class="eval-body">
-            <h3>一套可复现的评测数据管线</h3>
-            <p class="lead">评测不是跑一次脚本，而是一条可重放的数据管线：任务打包、独立执行、指标落盘、台账可追溯。</p>
-            <ul>
-              <li><b>Harbor 任务格式</b> — 任务打包 + record/replay，评测可重放</li>
-              <li><b>独立 eval 队列</b> — apex-eval task queue + 独立 schema，不触生产</li>
-              <li><b>指标三平面</b> — Pushgateway（harborEval*）+ Prometheus + Langfuse</li>
-              <li><b>驱动与分析</b> — eval skeleton + registration.json + analyze.ipynb</li>
-              <li><b>批次治理</b> — 批次 tag + fail-loud，缺臂 / 污染直接踢出</li>
-              <li><b>可追溯台账</b> — 191 行，每个结论能回到批次 / 臂 / trace</li>
-            </ul>
-          </div>
-        </div>
-        <div class="eval-row">
-          <div class="eval-k">评测标准</div>
-          <div class="eval-body">
-            <h3>金标准 + 五阶段 rubric</h3>
-            <p class="lead">金标准不是「模型会不会做题」，而是「模型经 harness 能否复现 Apex 生产级框架（可观测 / 可审计 / 可复现 / 持久）」。</p>
-            <ul>
-              <li><b>DD 双钻</b> — 问题空间覆盖、方案多样性、是否过早锁定</li>
-              <li><b>PP 金字塔</b> — 结论是否前置、分层清晰度、可扫读性</li>
-              <li><b>DP 设计方案</b> — 需求覆盖、与 DP 一致性、Harbor 合规</li>
-              <li><b>VM V 模型</b> — 覆盖率、rework、跳步、缺陷逃逸、首次正确率</li>
-              <li><b>CD CRISP-DM</b> — 分析有效性、数据泄漏、业务理解、可复现</li>
-              <li><b>rubric 锚点</b> — 结构门 + 覆盖点，每条锚到真实工件 file:line</li>
-            </ul>
-          </div>
-        </div>
-        <div class="eval-row">
-          <div class="eval-k">评判准确性</div>
-          <div class="eval-body">
-            <h3>让 judge 本身可验证</h3>
-            <p class="lead">判分如果「不报错只悄悄错」，分数就不可信。所以 judge 自己也要被测试、被校准、被纠错。</p>
-            <ul>
-              <li><b>零 IO 纯函数</b> — score(prompt,output)→Verdict，可单测</li>
-              <li><b>22-check 守卫</b> — 空 verdict、越界分、覆盖旧 verdict、台账未落盘</li>
-              <li><b>四道残片守卫</b> — landing 存在 / 非空 / 校验和 / score 已写</li>
-              <li><b>跨 judge 漂移 ≤0.01</b> — 同一工件换 judge 复评，分数稳定</li>
-              <li><b>失控剔除</b> — reviewer 轮帽 32，16/76 失控复审被识别并剔除</li>
-              <li><b>首跑 4/12 假收敛</b> — 正是这次教训，把「分数可信」做成质量基线</li>
-            </ul>
-          </div>
-        </div>
+      <div class="branches reveal">
+        <a class="branch" href="production.html">
+          <div class="top"><span class="num">01 / PRODUCTION</span><span class="arrow">→</span></div>
+          <h3>生产级线上设施</h3>
+          <p>飞轮怎么转、6-Agent 运行时怎么协作、双沙箱怎么隔离、自愈巡检怎么兜底。</p>
+          <div class="tags"><span class="tag">飞轮</span><span class="tag">6-Agent 运行时</span><span class="tag">双沙箱</span><span class="tag">自愈 · 巡检 · 熔断</span></div>
+        </a>
+        <a class="branch" href="deploy.html">
+          <div class="top"><span class="num">02 / DEPLOY</span><span class="arrow">→</span></div>
+          <h3>部署全流程</h3>
+          <p>从零到线上的一条可重复路径：模板驱动、逐层解耦、7 个模板、多 profile 启动。</p>
+          <div class="tags"><span class="tag">模板驱动</span><span class="tag">逐层解耦</span><span class="tag">零硬编码</span><span class="tag">多 profile</span></div>
+        </a>
+        <a class="branch" href="optimize.html">
+          <div class="top"><span class="num">03 / OPTIMIZE</span><span class="arrow">→</span></div>
+          <h3>优化方案</h3>
+          <p>优化不是调参，是改结构：控制流快路径、上下文管理、成本工程、工程纪律。</p>
+          <div class="tags"><span class="tag">控制流快路径</span><span class="tag">上下文管理</span><span class="tag">成本工程</span><span class="tag">工程纪律</span></div>
+        </a>
+        <a class="branch" href="eval.html">
+          <div class="top"><span class="num">04 / EVALUATION</span><span class="arrow">→</span></div>
+          <h3>数据管线 → 产品评测全流程</h3>
+          <p>评测不是打分，是把任务跑成产品：7 步流水线、数据管线设施、五阶段 rubric、评判准确性。</p>
+          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">五阶段 rubric</span><span class="tag">评判准确性</span></div>
+        </a>
       </div>
     </div>
   </section>
 
-  <section id="philosophy">
-    <div class="wrap quote">
-      <blockquote>一条永远不会失败的断言，<span>不是测试，是装饰。</span></blockquote>
-      <p>所以关键不变量都用「会变红的守卫」钉住：投影不许双写、工作流体不读环境变量、工具调用不许漏登记——改坏源码，断言必须真的失败。</p>
+  <section class="section" id="facts">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">By the numbers / 事实</div><h2>用数字说话。</h2></div>
+        <p class="note">截至当前，Apex-Agent 的公开可核验数据。</p>
+      </div>
+      <div class="facts reveal">
+        <div class="fact"><div class="v">1,205</div><div class="l">个任务被真实跑过</div></div>
+        <div class="fact"><div class="v">231,810</div><div class="l">次测试执行</div></div>
+        <div class="fact"><div class="v">76<span class="u">×</span>38</div><div class="l">任务 × 模块 矩阵</div></div>
+        <div class="fact"><div class="v">67<span class="u">/</span>67</div><div class="l">长期运行任务全通过</div></div>
+      </div>
     </div>
   </section>
 
-  <section id="contact">
-    <div class="wrap contact">
-      <div>
-        <h2>聊聊 Agent 运行时与评测</h2>
-        <p>项目为私有，欢迎邮件交流或索取演示。</p>
+  <section class="section" id="contact">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">Contact / 联系</div><h2>如果你也在做长任务智能体。</h2></div>
+        <p class="note">聊轨迹、聊评测、聊怎么让智能体从失败里变强——都欢迎。</p>
       </div>
-      <a class="mail" href="mailto:liangdizhen@qq.com">liangdizhen@qq.com</a>
-    </div>
-    <div class="wrap footer">
-      <span>© 2026 梁迪臻 · Dizhen Liang</span>
-      <span><a href="https://github.com/DizhenLiang">github.com/DizhenLiang</a></span>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">GITHUB</div><div class="rv"><a href="https://github.com/DizhenLiang" style="color:var(--accent)">github.com/DizhenLiang</a> · Apex-Agent 的源码与轨迹</div></div>
+        <div class="row"><div class="rk">EMAIL</div><div class="rv">liangdizhen@qq.com · 直接说事，带上链接和上下文</div></div>
+        <div class="row"><div class="rk">OPEN TO</div><div class="rv">智能体基础设施 · 评测体系 · 长任务系统的工程化落地</div></div>
+      </div>
     </div>
   </section>
 </main>
 
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="grid">
+      <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者 · 一个人，一套设施</div>
+      <div class="links"><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+    </div>
+    <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});
+  els.forEach(function(e){io.observe(e)});
+})();
+</script>
 </body>
 </html>
