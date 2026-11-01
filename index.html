@@ -74,8 +74,8 @@
         <div class="card">
           <div class="k">03 / 兜底与巡检</div>
           <h3>重放 · 幂等 · 巡检 · 熔断</h3>
-          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 69 条 test:guards 把「静默错误」提前暴露。</p>
-          <div class="meta">看板熔断默认连续 2 次 · 28 断言故障注入</div>
+          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 70 条 <code>test:guards</code>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数）把「静默错误」提前暴露。</p>
+          <div class="meta">看板熔断默认连续 2 次 · <code>test:fault-injection</code> 串跑 5 个测试</div>
         </div>
         <div class="card">
           <div class="k">04 / 可观测</div>
@@ -129,13 +129,13 @@
         <p class="note">四个数都能在仓库里复算，并写清各自口径：哪些是提交量、哪些是行数、哪些是评测轨迹。口径写清楚，比数字大更要紧。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,205</div><div class="l">次提交（git rev-list 实测）</div></div>
-        <div class="fact"><div class="v">223,237</div><div class="l">行自研代码（src+tests+scripts）</div></div>
+        <div class="fact"><div class="v">1,206</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-01）</div></div>
+        <div class="fact"><div class="v">256,493</div><div class="l">行自研代码（src+tests+scripts，1,038 个文件）</div></div>
         <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹</div></div>
-        <div class="fact"><div class="v">67<span class="u">/</span>68</div><div class="l">守卫测试通过（1 项依赖外部栈）</div></div>
+        <div class="fact"><div class="v">70</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">口径</div><div class="rv">1,205 是提交数不是任务数；真实跑过的唯一任务 38 个。223,237 行是代码行数量级，不是测试执行次数（测试用例实测 430 条、测试文件 309 个）。</div></div>
+        <div class="row"><div class="rk">口径</div><div class="rv">1,206 是提交数不是任务数；真实跑过的唯一任务 38 个。256,493 是代码行数，不是测试执行次数（测试文件 309 个，<code>it()</code>/<code>test()</code> 用例全仓 2,287 条、<code>tests/</code> 目录 548 条）。行数必须单遍求和：用 <code>xargs wc -l | tail -1</code> 会因参数被拆成多段而只数到最后一批，同一范围实测只剩 71,506——数字没核对过求和方式，就等于没核对过。</div></div>
         <div class="row"><div class="rk">未落地</div><div class="rv">范式动态路由与 Temporal 评测面真值口径仍在验证阶段；rework / 跳步当前是 proxy 口径。跨 judge 漂移实测：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
       </div>
     </div>
