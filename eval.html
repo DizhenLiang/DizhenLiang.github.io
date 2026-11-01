@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数据管线 → 产品评测全流程 · 梁迪臻</title>
-<meta name="description" content="Apex-Agent 评测全流程：7 步流水线、数据管线设施、五阶段 rubric、评判准确性——把任务跑成产品。">
+<meta name="description" content="Apex-Agent 评测全流程：7 步流水线、数据管线设施、五种方法范式 rubric、LLM-as-judge 守卫与实测漂移——含 proxy 与真值口径的诚实边界。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -41,11 +41,11 @@
       <div class="trace" aria-hidden="true">
         <div class="trace-head"><span>EVAL PIPELINE</span><span class="live"><i></i>RUNNING</span></div>
         <div class="trace-body">
-          <div class="trow"><span class="idx">01</span><span class="act">taskgen</span><span class="detail">生成 → 登记 → 191 行台账</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">02</span><span class="act">smoke</span><span class="detail">76 × 38 矩阵冒烟</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">03</span><span class="act">dataset</span><span class="detail">Harbor record / replay</span><span class="st ok">done</span></div>
-          <div class="trow now"><span class="idx">04</span><span class="act">run</span><span class="detail">DD · PP · DP · VM · CD</span><span class="st run">running</span></div>
-          <div class="trow"><span class="idx">05</span><span class="act">metrics</span><span class="detail">三平面 · 批次 tag · fail-loud</span><span class="st">queued</span></div>
+          <div class="trow"><span class="idx">01</span><span class="act">taskgen</span><span class="detail">生成 → 预注册 registration.json</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">verify-plane</span><span class="detail">评测面不污染生产面自检</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">dataset</span><span class="detail">Harbor 契约 agent/env/verifier/reward</span><span class="st ok">done</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">run</span><span class="detail">DD · PP · DP · VM · CD（五范式）</span><span class="st run">running</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">metrics</span><span class="detail">批次 tag · fail-loud · 198 行台账</span><span class="st">queued</span></div>
         </div>
         <div class="trace-foot"><span>step 04 / 07</span><span>◎ 失败即数据</span></div>
       </div>
@@ -59,13 +59,13 @@
         <p class="note">从任务到结论，每一步都有输入、输出、失败处理；任何一步不通过，都不会进入下一步。</p>
       </div>
       <div class="steps reveal">
-        <div class="step"><div class="sn">01</div><div><h4>任务生成与登记</h4><p>把需求翻译成可执行任务，登记到 191 行台账（ID、来源、依赖、验收点）；任务不是「一句话」，是可复现的工件。</p></div></div>
-        <div class="step"><div class="sn">02</div><div><h4>冒烟测试</h4><p>76 任务 × 38 模块矩阵，每个格点跑一次最小验证；先证明「能跑」，再谈「跑得对」。</p></div></div>
-        <div class="step"><div class="sn">03</div><div><h4>数据集构建</h4><p>转成 Harbor 任务格式（record / replay），独立 <code>apex-eval</code> 队列 + 独立 schema，与生产队列物理分离。</p></div></div>
-        <div class="step"><div class="sn">04</div><div><h4>评测执行</h4><p>按 DD / PP / DP / VM / CD 五个阶段跑评测；评测器在 Harbor 沙箱外，被测代码在沙箱内。</p></div></div>
-        <div class="step"><div class="sn">05</div><div><h4>指标采集</h4><p>三平面指标：Pushgateway（推送）/ Prometheus（时序）/ Langfuse（追踪）；批次打 tag，异常 fail-loud。</p></div></div>
-        <div class="step"><div class="sn">06</div><div><h4>评分汇总</h4><p>按 rubric 汇总五阶段得分；每个扣分点锚到 <code>file:line</code>，可复核、可争论。</p></div></div>
-        <div class="step"><div class="sn">07</div><div><h4>数据回流</h4><p>失败样本回流成新任务 / 新规则；评测不是终点，是下一轮的起点。</p></div></div>
+        <div class="step"><div class="sn">01</div><div><h4>任务生成与预注册</h4><p>把需求翻译成可执行任务，主终点、判据、批次口径先写进 <code>registration.json</code> 预注册——跑之前锁口径，跑完不能改口。结果逐行落 <code>results.jsonl</code>，当前实测 198 行。</p></div></div>
+        <div class="step"><div class="sn">02</div><div><h4>执行面自检</h4><p>先证明评测没污染生产：指标与 trace 打在独立批次 tag 上，生产面查询计数不因此增长（<code>verify-plane</code> 类自检）。先证明「没串味」，再谈「跑得对」。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>数据集构建</h4><p>任务统一成 <strong>Harbor 契约</strong>：<code>agent → environment → verifier → reward.txt</code>，模式 <code>spawn</code> / <code>latest</code>（<code>harbor-eval-bridge.ts:11-12</code>）。数据集构建侧要求锚点可解析，<strong>找不到锚即 FAIL</strong>，不静默放行。</p></div></div>
+        <div class="step"><div class="sn">04</div><div><h4>评测执行</h4><p>按 DD / PP / DP / VM / CD 五种<strong>方法范式</strong>各跑一遍。执行段是只读、限定 cwd、断网的 worktree 工具环（<code>paradigm-ab-eval-skeleton.ts:38</code>），刻意不触生产 workflow。</p></div></div>
+        <div class="step"><div class="sn">05</div><div><h4>指标采集</h4><p><code>prom-client</code> → Pushgateway → Prometheus，配 Langfuse trace；批次 tag 贯通指标、trace 与台账，异常 fail-loud。</p></div></div>
+        <div class="step"><div class="sn">06</div><div><h4>评分汇总</h4><p><strong>LLM-as-judge</strong> 按注册终点出分（DD=problem_coverage、PP=plan_coverage、DP=requirement_coverage、VM=skips+rework、CD=analysis_validity），异步 worker 跑，判据与权重固定，扣分点尽量给出证据指针。</p></div></div>
+        <div class="step"><div class="sn">07</div><div><h4>数据回流</h4><p>失败样本回流成新任务与新守卫——比如首跑发现的 4 个假收敛，直接变成了 judge 完整性检查项。评测不是终点，是下一轮的输入。</p></div></div>
       </div>
     </div>
   </section>
@@ -74,15 +74,15 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">02 / Data Pipeline</div><h2>数据管线设施：让评测可复现。</h2></div>
-        <p class="note">评测最怕「这次过了、下次不过」。数据管线的职责，是把不确定性钉死在格式、队列、指标、骨架四件事上。</p>
+        <p class="note">评测最怕「这次过了、下次不过」。数据管线的职责，是把不确定性钉死在契约、隔离、指标、骨架四件事上——每条都写清它实际做到哪一步。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">Harbor 任务格式</div><h3>record / replay</h3><p>任务统一成 Harbor 格式：record 记录环境与输入，replay 在隔离沙箱里重放。同一任务，任何机器上结果一致。</p></div>
-        <div class="card"><div class="k">独立队列</div><h3>apex-eval + 独立 schema</h3><p>评测走独立队列与独立 schema，不与生产任务混跑；生产抖动不会污染评测基线。</p></div>
-        <div class="card"><div class="k">三平面指标</div><h3>Pushgateway / Prometheus / Langfuse</h3><p>推送、时序、追踪三个平面各司其职；指标带批次 tag，能按批次、按任务、按阶段下钻。</p></div>
-        <div class="card"><div class="k">Eval Skeleton</div><h3>registration.json + analyze.ipynb</h3><p>每个新评测任务套同一套骨架：注册、运行、分析三段式；新人接手不用重新发明流程。</p></div>
-        <div class="card"><div class="k">批次与台账</div><h3>批次 tag + fail-loud + 191 行台账</h3><p>每批评测有唯一 tag；异常不静默，直接 fail-loud；191 行台账记录每个任务的来龙去脉。</p></div>
-        <div class="card"><div class="k">隔离</div><h3>评测沙箱与生产物理隔离</h3><p>评测跑在 Harbor，生产跑在 bubblewrap；两套环境不共享状态，评测结果才可信。</p></div>
+        <div class="card"><div class="k">Harbor 任务契约</div><h3>agent / environment / verifier / reward.txt</h3><p>任务统一成四段契约：verifier 产出 <code>reward.txt</code> 作为确定性真值，运行模式 <code>spawn</code> / <code>latest</code>（<code>harbor-eval-bridge.ts:11-12</code>）。这份契约的价值是「同一任务在别的机器上重跑，判分口径不变」。</p></div>
+        <div class="card"><div class="k">队列与写口</div><h3>apex-eval + 独立投影表</h3><p>评测走独立 task queue <code>apex-eval</code>，结果只经 <code>syncEvalResult</code> 单写口进独立投影表 <code>projection_eval_results</code>，PG 不可用即抛。<strong>边界</strong>：它与生产同 worker、同连接，是<strong>逻辑隔离</strong>，不是独立部署体。</p></div>
+        <div class="card"><div class="k">指标与追踪</div><h3>推送 / 时序 / trace</h3><p>Pushgateway 推送、Prometheus 存时序、Langfuse 记 trace 与评分；指标带批次 tag，可按批次、任务、阶段下钻。<strong>边界</strong>：Grafana 面板退役仍在清单里未勾选，采集与查询层不受影响。</p></div>
+        <div class="card"><div class="k">Eval Skeleton</div><h3>registration.json + analyze.mts</h3><p>新评测套同一套骨架：预注册（主终点、判据、批次口径）→ 运行 → <code>paradigm-ab-analyze.mts</code> 分析。跑之前把口径锁死，跑完不能改口。</p></div>
+        <div class="card"><div class="k">批次与台账</div><h3>批次 tag + fail-loud + 198 行</h3><p>每批一个唯一 tag，串起指标、trace 与台账；异常不静默，直接 fail-loud。结果台账 <code>results-v5-30s-fullredo.jsonl</code> 实测 198 行（10-28 报告写作 191，以文件为准）。</p></div>
+        <div class="card"><div class="k">隔离边界</div><h3>只读工具环，不触生产</h3><p>评测执行只读、限定 cwd、断网，刻意不启动生产 workflow；执行侧的沙箱是 OpenSandbox 容器（gVisor / runsc）。代价是过程指标只能先走 proxy 口径，见下方 judge 一节。</p></div>
       </div>
     </div>
   </section>
@@ -90,15 +90,15 @@
   <section class="section" id="rubric">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">03 / Rubric</div><h2>五阶段 rubric。</h2></div>
-        <p class="note">金标准 + 结构门：不是「看起来对」，而是「覆盖点全不全、结论前置没前置、数据泄漏没泄漏」。</p>
+        <div><div class="overline">03 / Rubric</div><h2>五种方法范式，各自一个注册终点。</h2></div>
+        <p class="note">DD / PP / DP / VM / CD 不是流水线阶段，而是五种<strong>工程方法范式</strong>（<code>paradigms.ts:10-15</code>）。每个范式只对它注册的终点打分，口径写在 <code>registration.json</code> 里，跑之前锁死。</p>
       </div>
       <div class="rows reveal">
-        <div class="row"><div class="rk">DD</div><div class="rv"><strong>问题空间覆盖</strong>：需求里每个问题点是否有对应实现，边界条件是否覆盖；rubric 锚到具体 <code>file:line</code>。</div></div>
-        <div class="row"><div class="rk">PP</div><div class="rv"><strong>结论前置</strong>：最终产出是否先给结论、再给证据；结构门要求「结论 → 依据 → 复现」。</div></div>
-        <div class="row"><div class="rk">DP</div><div class="rv"><strong>需求覆盖</strong>：任务描述里的每一条需求是否被满足；漏一条即扣分，不靠「整体感觉」。</div></div>
-        <div class="row"><div class="rk">VM</div><div class="rv"><strong>覆盖率 · rework · 跳步</strong>：测试覆盖多少、返工几次、有没有跳过关键步骤；跳步是长任务的头号杀手。</div></div>
-        <div class="row"><div class="rk">CD</div><div class="rv"><strong>数据泄漏 · 可复现</strong>：有没有把答案泄漏进上下文、结果能不能在干净环境复现；这两条不过，其他分再高也不算过。</div></div>
+        <div class="row"><div class="rk">DD 双钻</div><div class="rv"><code>problem_coverage</code>：问题空间是否被覆盖——需求里每个问题点有无对应实现、边界条件有没有做到。</div></div>
+        <div class="row"><div class="rk">PP 金字塔</div><div class="rv"><code>plan_coverage</code>：计划与结构是否覆盖。「结论先行」是它的子判据之一，不是注册终点——注册口径是 <code>plan_coverage</code>，比单独讲「结论前置」宽。</div></div>
+        <div class="row"><div class="rk">DP 设计方案引导编码</div><div class="rv"><code>requirement_coverage</code>：任务描述里的每一条需求是否被满足，逐条核，不靠「整体感觉」。这是当前唯一测出稳定正效应的范式（+0.17，跨 judge 稳健）。</div></div>
+        <div class="row"><div class="rk">VM W 模型</div><div class="rv"><code>skips + rework</code>：跳了几步、返工几次。<strong>口径注意</strong>：注册终点里没有「测试覆盖率」；且当前这两个指标是 executor 统计的 <strong>proxy 口径</strong>，不是 Temporal History 真值。</div></div>
+        <div class="row"><div class="rk">CD CRISP-DM</div><div class="rv"><code>analysis_validity</code>：分析过程是否成立。数据泄漏与可复现是它的子判据，不是它的全部——打分打的是有效性整体，两条子判据各自还有守卫。</div></div>
       </div>
     </div>
   </section>
@@ -107,15 +107,15 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">04 / Judge Accuracy</div><h2>评判准确性：judge 自己也得被评测。</h2></div>
-        <p class="note">如果 judge 会漂、会漏、会编，那所有分数都不可信。所以 judge 本身要过四道关。</p>
+        <p class="note">如果 judge 会漂、会漏、会编，所有分数都不可信。但 judge 本身是 LLM 调用，不是纯函数——所以要靠守卫与实测漂移来管住它，而不是宣称它天然稳定。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">零 IO 纯函数</div><h3>judge 不读环境</h3><p>评分函数不碰文件、不碰网络、不碰时钟；输入是 rubric + 证据，输出是分数 + 理由，可重放。</p></div>
-        <div class="card"><div class="k">22-check 守卫</div><h3>四类静默缺陷</h3><p>22 项检查覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」等静默缺陷；缺一项就不出分。</p></div>
-        <div class="card"><div class="k">残片守卫</div><h3>四道防线</h3><p>截断、空证据、错位锚点、越界分数——四类残片各有守卫，防止「看起来有分，其实是垃圾」。</p></div>
-        <div class="card"><div class="k">跨 judge 漂移</div><h3>≤ 0.01</h3><p>同一批任务换 judge 重跑，分数漂移必须 ≤ 0.01；超了说明 judge 不稳，先修 judge 再谈结果。</p></div>
-        <div class="card"><div class="k">轮帽</div><h3>32 轮上限</h3><p>reviewer 最多 32 轮，超出即判失控；实测剔除 16/76 个失控样本，避免「无限返工」。 </p></div>
-        <div class="card"><div class="k">教训</div><h3>首跑 4/12 假收敛</h3><p>第一次跑 12 个任务，4 个「看起来收敛」其实是假收敛——这条教训直接催生了上面的守卫。</p></div>
+        <div class="card"><div class="k">judge 的真实形态</div><h3>LLM-as-judge，不是零 IO</h3><p>评分走异步 worker，<code>await callModelFn(...)</code> 真发网络调用（<code>eval-agent.ts:111</code>）。确定性的部分是<strong>判据、权重、守卫和回退面</strong>，不是 judge 函数本身。</p></div>
+        <div class="card"><div class="k">26-check 守卫</div><h3>四类静默缺陷</h3><p>judge 完整性测试实数 <strong>26 项 check</strong>（<code>tests/paradigm-ab-judge-integrity.test.ts</code>），覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」；缺一项就不出分。</p></div>
+        <div class="card"><div class="k">残片守卫</div><h3>防「看起来有分，其实是垃圾」</h3><p>截断、空证据、错位锚点、越界分数四类残片各有对应检查项，与 26-check 同属一条守卫链，不静默放行。</p></div>
+        <div class="card"><div class="k">跨 judge 漂移实测</div><h3>0 / −0.01 / +0.15 / 0</h3><p>同批任务换 judge 重跑 4 个 cell：dp-007 双臂漂移 ≤0.01（稳健），vm-018/c 低分端 <strong>+0.15</strong>（偏严）。<strong>诚实边界</strong>：n=4，只能说明方向，不能声称全局 ≤0.01。</p></div>
+        <div class="card"><div class="k">轮帽</div><h3>复审 32 轮 / 初审 80 轮</h3><p><code>PARADIGM_AB_REREVIEW_CEILING = 32</code>（初审帽 80）。实测识别出 16 / 76 个 reviewer ≥60 轮的失控样本，<strong>纳入治理口径但没有剔除</strong>——真实失败样本要保留。</p></div>
+        <div class="card"><div class="k">教训</div><h3>首跑 12 cell 中 4 个假收敛</h3><p>dp-001/t（147 轮重复）、vm-017/c（238 轮强制写入）、dp-015/t（837 轮撞 max-turns）、cd-eval/t（48 轮）——「看起来收敛」不等于收敛，这条教训直接催生了上面的守卫。</p></div>
       </div>
     </div>
   </section>
@@ -128,7 +128,7 @@
       </div>
       <div class="rows reveal">
         <div class="row"><div class="rk">可用性</div><div class="rv"><strong>跑得动</strong>：任务能进沙箱、能出结果、能在超时内完成；这是及格线，不是目标。</div></div>
-        <div class="row"><div class="rk">正确性</div><div class="rv"><strong>跑得对</strong>：五阶段 rubric 全过，CD（泄漏 / 可复现）必须过；正确性不能被「效率」换掉。</div></div>
+        <div class="row"><div class="rk">正确性</div><div class="rv"><strong>跑得对</strong>：各范式的注册终点（problem / plan / requirement coverage、skips+rework、analysis_validity）达标；正确性不能被「效率」换掉。</div></div>
         <div class="row"><div class="rk">价值</div><div class="rv"><strong>跑得值</strong>：在正确的前提下，成本、时延、返工率是否可接受；这层决定能不能规模化。</div></div>
       </div>
     </div>
@@ -137,13 +137,18 @@
   <section class="section" id="numbers">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">By the numbers</div><h2>评测链的硬数据。</h2></div>
+        <div><div class="overline">By the numbers</div><h2>评测链的可复算数据。</h2></div>
+        <p class="note">每个数都注明它数的是什么、以及样本量够不够下结论。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">191</div><div class="l">行任务台账</div></div>
-        <div class="fact"><div class="v">76<span class="u">×</span>38</div><div class="l">冒烟矩阵</div></div>
-        <div class="fact"><div class="v">67<span class="u">/</span>67</div><div class="l">长期任务全通过</div></div>
-        <div class="fact"><div class="v">≤0.01</div><div class="l">跨 judge 漂移</div></div>
+        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹</div></div>
+        <div class="fact"><div class="v">198</div><div class="l">行结果台账（实测行数）</div></div>
+        <div class="fact"><div class="v">26</div><div class="l">项 judge 完整性守卫</div></div>
+        <div class="fact"><div class="v">4<span class="u">/</span>12</div><div class="l">首跑假收敛（教训来源）</div></div>
+      </div>
+      <div class="rows reveal" style="margin-top:22px">
+        <div class="row"><div class="rk">实测结论</div><div class="rv">DP（设计方案引导编码）是当前唯一测出稳定正效应的范式，配对差 +0.17 且跨 judge 稳健；VM（W 模型）成本最高而无可见增量。<strong>但每个范式只有 6–12 对配对样本</strong>——这是方向性信号，不是可推广结论。</div></div>
+        <div class="row"><div class="rk">口径注意</div><div class="rv">跳步 / rework 现在是 proxy 口径；把它们变成 Temporal History 真值的改造方案已写好（PR E0–E3），尚未落地。这一页把它列成待办，而不是成果。</div></div>
       </div>
     </div>
   </section>

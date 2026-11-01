@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>梁迪臻 · Apex-Agent</title>
-<meta name="description" content="梁迪臻，Apex-Agent 作者。一套把长任务跑成产品的生产级设施：可观测、可审计、可回放。">
+<meta name="description" content="梁迪臻，Apex-Agent 作者。一套把长任务跑成可回放轨迹的智能体设施：Temporal 执行权威、沙箱隔离、LLM-as-judge 评测与守卫。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -41,11 +41,11 @@
       <div class="trace" aria-hidden="true">
         <div class="trace-head"><span>LIVE TRACE</span><span class="live"><i></i>RUNNING</span></div>
         <div class="trace-body">
-          <div class="trow"><span class="idx">01</span><span class="act">plan</span><span class="detail">任务拆解 · 边界与验收标准</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">02</span><span class="act">execute</span><span class="detail">隔离工作区 · 双沙箱</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">03</span><span class="act">probe</span><span class="detail">行为测试 · 覆盖判定</span><span class="st ok">done</span></div>
-          <div class="trow now"><span class="idx">04</span><span class="act">review</span><span class="detail">独立评测 · 可复现判定</span><span class="st run">running</span></div>
-          <div class="trow"><span class="idx">05</span><span class="act">verify</span><span class="detail">检查器 / 构建 / 契约</span><span class="st">queued</span></div>
+          <div class="trow"><span class="idx">01</span><span class="act">dispatch</span><span class="detail">ingress 白名单 · 默认拒绝</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">execute</span><span class="detail">OpenSandbox 容器 · gVisor</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">project</span><span class="detail">Temporal History → PG 读模型</span><span class="st ok">done</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">review</span><span class="detail">LLM-as-judge · 26 项守卫</span><span class="st run">running</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">guards</span><span class="detail">巡检 / 契约 / fail-loud</span><span class="st">queued</span></div>
         </div>
         <div class="trace-foot"><span>step 04 / 05</span><span>◎ 失败即轨迹</span></div>
       </div>
@@ -56,31 +56,31 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">The Facility / 整套设施</div><h2>不是一套代码，是一台机器。</h2></div>
-        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、隔离执行、独立评测、数据回流，四个环节咬合成一个可自我改进的飞轮。</p>
+        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、沙箱执行、执行权威、评测与数据回流咬合成一个可自我改进的飞轮。下面四条都能在源码里指到位置。</p>
       </div>
       <div class="cards reveal">
         <div class="card">
           <div class="k">01 / 飞轮</div>
-          <h3>任务定义 → 隔离工作区 → 智能体执行 → 独立评测 → 数据回流</h3>
-          <p>五个环节咬合，每一轮都把「失败」变成下一轮的「数据」。没有一次性脚本，只有持续变强的机器。</p>
-          <div class="meta">76 任务 × 38 模块</div>
+          <h3>任务定义 → 隔离执行 → 智能体跑完 → 独立评测 → 数据回流</h3>
+          <p>每一轮都把「失败」变成下一轮的「数据」。评测里发现的假收敛，直接变成下一批的守卫项——不是一次性脚本，是持续收口的循环。</p>
+          <div class="meta">38 任务 × 2 臂 = 76 条轨迹</div>
         </div>
         <div class="card">
-          <div class="k">02 / 双沙箱</div>
-          <h3>bubblewrap 执行沙箱 + Harbor 评测沙箱</h3>
-          <p>执行与评测物理隔离：被评测的代码跑在 Harbor 里，评测器跑在沙箱外——既不可泄漏数据，也不能被改答案。</p>
-          <div class="meta">执行 / 评测 双平面</div>
+          <div class="k">02 / 隔离执行</div>
+          <h3>OpenSandbox 容器沙箱 + 只读评测工具环</h3>
+          <p>智能体生成的代码跑在容器沙箱里，sandboxed 控制面默认 gVisor（runsc），runc / docker 备援，可选 E2B 微 VM。评测执行另走一条只读、限定 cwd、断网的 worktree 工具环，不碰生产 workflow。</p>
+          <div class="meta">执行 / 评测 两面分离</div>
         </div>
         <div class="card">
-          <div class="k">03 / 自愈与巡检</div>
-          <h3>重试 · watchdog · 巡检 · 熔断</h3>
-          <p>失败自动重试，卡死由 watchdog 回收；1,648 行巡检代码 + 1,745 个测试把「静默错误」提前暴露；连续 5 次失败触发熔断。</p>
-          <div class="meta">1,131 次异常上报 · 36 次预置故障验证</div>
+          <div class="k">03 / 兜底与巡检</div>
+          <h3>重放 · 幂等 · 巡检 · 熔断</h3>
+          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 69 条 test:guards 把「静默错误」提前暴露。</p>
+          <div class="meta">看板熔断默认连续 2 次 · 28 断言故障注入</div>
         </div>
         <div class="card">
           <div class="k">04 / 可观测</div>
-          <h3>三平面指标 + 全量日志 + 异常上报</h3>
-          <p>Pushgateway / Prometheus / Langfuse 三平面，40/40 日志 + 40/40 异常上报；每一条轨迹都能回放到「哪一步、哪一行」。</p>
+          <h3>指标推送 + 时序 + 追踪，全链路批次 tag</h3>
+          <p>Pushgateway 推指标、Prometheus 存时序、Langfuse 记 trace 与评分；每条轨迹带批次 tag，异常 fail-loud 不静默。Grafana 面板已退役，采集与查询层保留。</p>
           <div class="meta">可回放 · 可定位 · 可审计</div>
         </div>
       </div>
@@ -91,32 +91,32 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">Branches / 四条分支</div><h2>顺着设施的四个侧面往里看。</h2></div>
-        <p class="note">同一台机器，四条独立的叙事线：生产设施、部署流程、优化方案、评测全流程。</p>
+        <p class="note">同一台机器，四条独立的叙事线：生产设施、部署流程、优化方案、评测全流程。每条里的机制都标了源码位置，可以当场追问。</p>
       </div>
       <div class="branches reveal">
         <a class="branch" href="production.html">
           <div class="top"><span class="num">01 / PRODUCTION</span><span class="arrow">→</span></div>
           <h3>生产级线上设施</h3>
-          <p>飞轮怎么转、Orchestrator 运行时（36 个 specialist 角色库）怎么协作、双沙箱怎么隔离、自愈巡检怎么兜底。</p>
-          <div class="tags"><span class="tag">飞轮</span><span class="tag">Orchestrator 运行时</span><span class="tag">双沙箱</span><span class="tag">自愈 · 巡检 · 熔断</span></div>
+          <p>飞轮怎么转、Temporal 执行权威怎么保证恰好一次副作用、入口守卫与单写权威怎么收口、沙箱怎么隔离、巡检与熔断怎么兜底。</p>
+          <div class="tags"><span class="tag">飞轮</span><span class="tag">Temporal 执行权威</span><span class="tag">入口守卫 · TC-11</span><span class="tag">沙箱隔离</span></div>
         </a>
         <a class="branch" href="deploy.html">
           <div class="top"><span class="num">02 / DEPLOY</span><span class="arrow">→</span></div>
-          <h3>部署全流程</h3>
-          <p>从零到线上的一条可重复路径：模板驱动、逐层解耦、7 个模板、多 profile 启动。</p>
-          <div class="tags"><span class="tag">模板驱动</span><span class="tag">逐层解耦</span><span class="tag">零硬编码</span><span class="tag">多 profile</span></div>
+          <h3>部署与上线</h3>
+          <p>一条可重复的启动路径：锁文件安装、compose 分层、多环境档位、启动自报、灰度旗标回退。含未做到的部分。</p>
+          <div class="tags"><span class="tag">锁文件安装</span><span class="tag">compose 分层</span><span class="tag">多环境档位</span><span class="tag">灰度回退</span></div>
         </a>
         <a class="branch" href="optimize.html">
           <div class="top"><span class="num">03 / OPTIMIZE</span><span class="arrow">→</span></div>
           <h3>优化方案</h3>
-          <p>优化不是调参，是改结构：控制流快路径、上下文管理、成本工程、工程纪律。</p>
-          <div class="tags"><span class="tag">控制流快路径</span><span class="tag">上下文管理</span><span class="tag">成本工程</span><span class="tag">工程纪律</span></div>
+          <p>优化不是调参，是改结构：工具结果缓存、上下文窗口降级、拓扑分层并发、预算与早停、取消信号贯通。</p>
+          <div class="tags"><span class="tag">工具缓存</span><span class="tag">上下文窗口</span><span class="tag">预算早停</span><span class="tag">工程纪律</span></div>
         </a>
         <a class="branch" href="eval.html">
           <div class="top"><span class="num">04 / EVALUATION</span><span class="arrow">→</span></div>
           <h3>数据管线 → 产品评测全流程</h3>
-          <p>评测不是打分，是把任务跑成产品：7 步流水线、数据管线设施、五阶段 rubric、评判准确性。</p>
-          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">五阶段 rubric</span><span class="tag">评判准确性</span></div>
+          <p>评测不是打分，是把任务跑成产品：7 步流水线、数据管线设施、五种方法范式 rubric、评判准确性守卫，以及 proxy 与真值的口径差别。</p>
+          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">五范式 rubric</span><span class="tag">评判准确性</span></div>
         </a>
       </div>
     </div>
@@ -126,13 +126,17 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">By the numbers / 事实</div><h2>用数字说话。</h2></div>
-        <p class="note">截至当前，Apex-Agent 的公开可核验数据。</p>
+        <p class="note">四个数都能在仓库里复算，并写清各自口径：哪些是提交量、哪些是行数、哪些是评测轨迹。口径写清楚，比数字大更要紧。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,205</div><div class="l">个任务被真实跑过</div></div>
-        <div class="fact"><div class="v">231,810</div><div class="l">次测试执行</div></div>
-        <div class="fact"><div class="v">76<span class="u">×</span>38</div><div class="l">任务 × 模块 矩阵</div></div>
-        <div class="fact"><div class="v">67<span class="u">/</span>67</div><div class="l">长期运行任务全通过</div></div>
+        <div class="fact"><div class="v">1,205</div><div class="l">次提交（git rev-list 实测）</div></div>
+        <div class="fact"><div class="v">223,237</div><div class="l">行自研代码（src+tests+scripts）</div></div>
+        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹</div></div>
+        <div class="fact"><div class="v">67<span class="u">/</span>68</div><div class="l">守卫测试通过（1 项依赖外部栈）</div></div>
+      </div>
+      <div class="rows reveal" style="margin-top:22px">
+        <div class="row"><div class="rk">口径</div><div class="rv">1,205 是提交数不是任务数；真实跑过的唯一任务 38 个。223,237 行是代码行数量级，不是测试执行次数（测试用例实测 430 条、测试文件 309 个）。</div></div>
+        <div class="row"><div class="rk">未落地</div><div class="rv">范式动态路由与 Temporal 评测面真值口径仍在验证阶段；rework / 跳步当前是 proxy 口径。跨 judge 漂移实测：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
       </div>
     </div>
   </section>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>生产级线上设施 · 梁迪臻</title>
-<meta name="description" content="Apex-Agent 的生产级线上设施：飞轮、Orchestrator 运行时（36 个 specialist 角色库）、双沙箱、自愈巡检熔断、可观测性。">
+<meta name="description" content="Apex-Agent 的生产级线上设施：Temporal 执行权威、入口守卫与单写投影、OpenSandbox+gVisor 沙箱隔离、巡检守卫与熔断、可观测性。含未落地部分的诚实边界。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -31,8 +31,8 @@
     <div class="wrap grid">
       <div>
         <div class="eyebrow">Production / 生产级线上设施</div>
-        <h1>生产级，<br>不是形容词，是<span class="em">一组数字</span>。</h1>
-        <p class="lede">线上设施要回答四个问题：任务怎么转起来、谁在干活、边界在哪、出错谁来兜。Apex-Agent 用一套可验证的机制回答它们。</p>
+        <h1>生产级，<br>不是形容词，是<span class="em">可复算的口径</span>。</h1>
+        <p class="lede">线上设施要回答四个问题：任务怎么转起来、谁在干活、边界在哪、出错谁来兜。Apex-Agent 用一套能指到源码位置的机制回答它们——包括我没做到的部分，我也写在页面上。</p>
         <div class="actions">
           <a class="btn btn-primary" href="#flywheel">看飞轮 →</a>
           <a class="btn btn-ghost" href="#agents">运行时模型</a>
@@ -42,10 +42,10 @@
         <div class="trace-head"><span>FACILITY STATUS</span><span class="live"><i></i>ONLINE</span></div>
         <div class="trace-body">
           <div class="trow"><span class="idx">01</span><span class="act">flywheel</span><span class="detail">任务 → 工作区 → 执行 → 评测 → 回流</span><span class="st ok">up</span></div>
-          <div class="trow"><span class="idx">02</span><span class="act">runtime</span><span class="detail">Orchestrator 内核 · Temporal 权威 · 36 specialist 库</span><span class="st ok">up</span></div>
-          <div class="trow"><span class="idx">03</span><span class="act">sandbox</span><span class="detail">bubblewrap + Harbor · 物理隔离</span><span class="st ok">up</span></div>
-          <div class="trow"><span class="idx">04</span><span class="act">guard</span><span class="detail">重试 · watchdog · 巡检 · 熔断</span><span class="st ok">up</span></div>
-          <div class="trow now"><span class="idx">05</span><span class="act">observe</span><span class="detail">三平面指标 · 全量日志 · 异常上报</span><span class="st run">live</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">runtime</span><span class="detail">Temporal 权威 · 入口守卫 · 单写投影</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">sandbox</span><span class="detail">OpenSandbox 容器 · gVisor(runsc)</span><span class="st ok">up</span></div>
+          <div class="trow"><span class="idx">04</span><span class="act">guard</span><span class="detail">重放 · 幂等 · 巡检 · 熔断</span><span class="st ok">up</span></div>
+          <div class="trow now"><span class="idx">05</span><span class="act">observe</span><span class="detail">指标推送 · 时序 · trace</span><span class="st run">live</span></div>
         </div>
         <div class="trace-foot"><span>5 / 5 组件在线</span><span>◎ 可回放</span></div>
       </div>
@@ -60,9 +60,9 @@
       </div>
       <div class="steps reveal">
         <div class="step"><div class="sn">01</div><div><h4>任务定义</h4><p>把模糊需求翻译成可验收的任务：边界、约束、验收标准。任务本身是可执行、可复现的工件，不是一句话。</p></div></div>
-        <div class="step"><div class="sn">02</div><div><h4>隔离工作区</h4><p>每个任务一个干净工作区，bubblewrap 限制文件系统 / 网络 / 进程。上一轮的残留不会污染下一轮。</p></div></div>
-        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p><strong>apexOrchestrator</strong> 内核跑 Plan-Execute-Review：先规划、再执行、后评审。执行层经 Temporal child workflow 并行扇出，按任务需要调起 36 个 specialist 角色，输出可追溯。</p></div></div>
-        <div class="step"><div class="sn">04</div><div><h4>独立评测</h4><p>评测器与被测代码物理隔离，跑在 Harbor 沙箱里；评分按五阶段 rubric，锚到 <code>file:line</code>。</p></div></div>
+        <div class="step"><div class="sn">02</div><div><h4>隔离工作区与沙箱</h4><p>每个任务一个干净工作区；智能体生成的代码在 <strong>OpenSandbox</strong> 容器沙箱里执行，sandboxed 控制面默认 <strong>gVisor（runsc）</strong>，runc / docker 备援，设了 <code>E2B_API_KEY</code> 时走 E2B 微 VM。上一轮的残留不会污染下一轮。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p><strong>Temporal 是唯一执行权威</strong>：执行层用 child workflow 并行扇出，副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 保证恰好一次，崩溃后由 Workflow 重放恢复。Plan-Execute-Review 形态在 <code>workflows/planExecuteReview.ts</code>。</p></div></div>
+        <div class="step"><div class="sn">04</div><div><h4>独立评测</h4><p>评测跑在只读、限定 cwd、断网的工具环里，不触生产 workflow；评分按五种方法范式的 rubric，扣分点尽量锚到 <code>file:line</code>，锚点缺失即 fail-loud。</p></div></div>
         <div class="step"><div class="sn">05</div><div><h4>数据回流</h4><p>轨迹、指标、经验回流成下一轮的任务与规则。跑得越多，飞轮越稳。</p></div></div>
       </div>
     </div>
@@ -71,13 +71,13 @@
   <section class="section" id="agents">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">02 / Runtime</div><h2>运行时：一个内核，一个权威，三十六个角色。</h2></div>
-        <p class="note">不是六个写死的角色，而是一套可调度的运行时：一个 Orchestrator 内核跑 Plan-Execute-Review，Temporal 做唯一执行权威，36 个 specialist 定义是可委派的角色库。</p>
+        <div><div class="overline">02 / Runtime</div><h2>运行时：一个执行权威，一道入口守卫，一份角色库。</h2></div>
+        <p class="note">不是一组写死的角色，而是以 Temporal 为唯一执行权威的运行时。下面每一项都标了源码位置，也包括我目前没做到的部分——比如 36 个角色库还只在 IDE 侧，运行时没有接。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">Orchestrator 内核</div><h3>apexOrchestrator</h3><p>跑 Plan-Execute-Review 循环：先规划、再执行、后评审。每个工具决策都经 Temporal 派发，是唯一的「控制大脑」。</p></div>
-        <div class="card"><div class="k">Temporal 执行权威</div><h3>恰好一次副作用</h3><p>执行层用 child workflow 并行扇出，Activity 保证副作用恰好一次；Workflow 重放提供崩溃恢复，Temporal 是唯一事实源。</p></div>
-        <div class="card"><div class="k">36 个 specialist 定义</div><h3>角色库，非写死</h3><p>仓库内置 36 个 agent 定义（<code>.claude/agents/</code>）：analyst / architect / executor / planner / verifier / reviewer / debugger … 按需被调起，不固定为六个。</p></div>
+        <div class="card"><div class="k">Temporal 执行权威</div><h3>恰好一次副作用</h3><p>执行层用 child workflow 并行扇出（<code>workflows/branch.ts:269-350</code>），副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 收口；崩溃恢复由 Workflow 重放提供，Temporal 是唯一事实源。</p></div>
+        <div class="card"><div class="k">编排形态</div><h3>Plan-Execute-Review</h3><p>三段式编排在 <code>workflows/planExecuteReview.ts</code>。<strong>诚实边界</strong>：<code>apexOrchestrator</code>（<code>orchestrator.ts</code>）是 TC-07 单步 PoC，文件头自陈「NOT a production candidate」，目前没有 src 调用方。</p></div>
+        <div class="card"><div class="k">36 个 specialist 定义</div><h3>角色库，尚未接入运行时</h3><p><code>.claude/agents/</code> 实测 36 个定义（analyst / architect / executor / planner / verifier / reviewer / debugger …）。<strong>诚实边界</strong>：<code>src/</code> 对它零引用，当前是 Claude Code / IDE 侧角色库，不是运行时里被动态调起的池子。</p></div>
       </div>
       <div class="rows reveal" style="margin-top:18px">
         <div class="row"><div class="rk">入口守卫</div><div class="rv"><strong>dispatchIngress</strong>：默认拒绝的白名单单接入点，外部流量只经它直交 Temporal，不中转、不在入口扇出。</div></div>
@@ -89,13 +89,13 @@
   <section class="section" id="sandbox">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">03 / Isolation</div><h2>双沙箱：执行与评测物理隔离。</h2></div>
-        <p class="note">执行沙箱管「能不能跑」，评测沙箱管「算不算对」。两个平面不共享内存、不共享文件系统。</p>
+        <div><div class="overline">03 / Isolation</div><h2>隔离：执行进沙箱，评测走只读工具环。</h2></div>
+        <p class="note">执行面管「能不能跑」，评测面管「算不算对」。两者是不同性质的约束——我不把它们说成「物理隔离的双沙箱」，因为评测侧目前是进程内的只读工具环。</p>
       </div>
       <div class="rows reveal">
-        <div class="row"><div class="rk">执行沙箱</div><div class="rv"><strong>bubblewrap</strong>：限制文件系统、网络、进程，任务代码跑在里面，拿不到宿主环境。</div></div>
-        <div class="row"><div class="rk">评测沙箱</div><div class="rv"><strong>Harbor</strong>：被测代码跑在评测沙箱内，评测器跑在沙箱外——数据不泄漏，答案也改不了。</div></div>
-        <div class="row"><div class="rk">隔离收益</div><div class="rv">防数据泄漏、防「改评测器过题」、防跨任务污染；每个任务都是可复现的干净起点。</div></div>
+        <div class="row"><div class="rk">执行沙箱</div><div class="rv"><strong>OpenSandbox</strong>（阿里，Apache-2.0）容器隔离：智能体生成的代码跑在容器里，<code>sandboxed</code> 控制面默认 <strong>gVisor / runsc</strong>，<code>trusted</code> 层 runc，docker 为声明的备援，设 <code>E2B_API_KEY</code> 时走 E2B 微 VM。出处 <code>opensandbox-client.ts:4-11</code>、<code>exec-safety.ts:14</code>。</div></div>
+        <div class="row"><div class="rk">评测面</div><div class="rv">只读工具集 + 限定 cwd + 断网的 worktree 工具环，刻意不触生产 Temporal workflow（<code>paradigm-ab-eval-skeleton.ts:38</code>）；<strong>Harbor</strong> 任务契约是 <code>agent → environment → verifier → reward.txt</code>，模式 <code>spawn</code> / <code>latest</code>（<code>harbor-eval-bridge.ts:11-12</code>）。</div></div>
+        <div class="row"><div class="rk">隔离收益</div><div class="rv">防跨任务污染、防「改评测器过题」、防止评测动到在飞的生产 run；代价是过程指标只能先走 proxy 口径（见评测页）。</div></div>
       </div>
     </div>
   </section>
@@ -104,13 +104,13 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">04 / Self-healing</div><h2>自愈 · 巡检 · 熔断。</h2></div>
-        <p class="note">长任务最怕的不是报错，是「静默错误」——跑完了，但结果是错的。三层兜底把它提前暴露。</p>
+        <p class="note">长任务最怕的不是报错，是「静默错误」——跑完了，但结果是错的。下面三层兜底把它提前暴露；阈值都按代码里的真实值写。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">自愈</div><h3>重试 + watchdog</h3><p>失败自动重试（最多 2 次）；卡死的任务由 watchdog 超时回收，不让一个任务拖垮整条队列。</p></div>
-        <div class="card"><div class="k">巡检</div><h3>1,648 行 · 1,745 tests</h3><p>巡检代码本身被测试覆盖，检查「该有的日志有没有、该报的异常报没报、状态是否一致」。</p></div>
-        <div class="card"><div class="k">熔断</div><h3>连续 5 次失败触发</h3><p>同一类失败连续出现时自动熔断，先停、再看、再修——而不是让错误雪崩。</p></div>
-        <div class="card"><div class="k">验证</div><h3>36 次预置故障</h3><p>主动注入故障，验证「告警会不会响、回滚会不会生效、轨迹会不会留痕」。</p></div>
+        <div class="card"><div class="k">自愈</div><h3>重放 + 幂等 + 分级重试</h3><p>核心 run 用 <code>maximumAttempts = 1</code>：不盲重试，靠 Workflow 重放与幂等键恢复（<code>workflows/piRun.ts:49</code>）；<code>agentLoop</code> / Plan-Execute-Review 是 3 次，cron 任务 2 次。没有笼统的「最多重试 2 次」。</p></div>
+        <div class="card"><div class="k">卡死收口</div><h3>claim TTL + 超时，不是 watchdog</h3><p>任务级回收靠 claim TTL 15 分钟、心跳陈旧 1 小时、崩溃检测 30 秒 + Temporal runTimeout（<code>hermes-kanban/constants.ts:66-79</code>）；<code>apex-worker-watchdog.mjs</code> 只做 worker <strong>进程级保活重拉</strong>。</p></div>
+        <div class="card"><div class="k">巡检与守卫</div><h3>26 项守卫 check · 69 条 test:guards</h3><p>judge 完整性 26-check 覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」四类静默缺陷；巡检与守卫脚本合计 1,523 行，本身被测试覆盖。</p></div>
+        <div class="card"><div class="k">熔断</div><h3>看板派发器默认连续 2 次</h3><p><code>DEFAULT_FAILURE_LIMIT = 2</code>（<code>hermes-kanban/constants.ts:99</code>、<code>dispatch.ts:435</code>），先停、再看、再修。另有 <strong>28 条故障注入断言</strong>（17 PG 幂等 + 5 ES 降级 + 6 ANN）验证降级路径真会响。</p></div>
       </div>
     </div>
   </section>
@@ -118,13 +118,13 @@
   <section class="section" id="observe">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">05 / Observability</div><h2>可观测：三平面 + 全量日志。</h2></div>
-        <p class="note">一条轨迹要能回答：哪一步慢了、哪一步错了、哪一行代码导致的。</p>
+        <div><div class="overline">05 / Observability</div><h2>可观测：指标推送 + 时序 + 追踪。</h2></div>
+        <p class="note">一条轨迹要能回答：哪一步慢了、哪一步错了、哪一行代码导致的。这里只讲已经在跑的面，没跑的不算数。</p>
       </div>
       <div class="rows reveal">
-        <div class="row"><div class="rk">指标平面</div><div class="rv"><strong>Pushgateway</strong> 推送 + <strong>Prometheus</strong> 时序：任务吞吐、成功率、时延、成本。</div></div>
-        <div class="row"><div class="rk">追踪平面</div><div class="rv"><strong>Langfuse</strong>：LLM 调用链、token、上下文窗口，逐跳可回放。</div></div>
-        <div class="row"><div class="rk">日志平面</div><div class="rv">40/40 日志覆盖 + 40/40 异常上报；1,131 次异常上报真实落地，不是「设计里写了」。</div></div>
+        <div class="row"><div class="rk">指标面</div><div class="rv"><code>prom-client</code> → <strong>Pushgateway</strong> 推送 → <strong>Prometheus</strong> 时序（<code>paradigm-ab-metrics.ts:306-309</code>）：任务吞吐、成功率、时延、成本、skill 调用率。</div></div>
+        <div class="row"><div class="rk">追踪面</div><div class="rv"><strong>Langfuse</strong>：LLM 调用链、token、上下文窗口、评分，逐跳可回放；每条 trace 带批次 tag，能按批次 / 任务 / 阶段下钻。</div></div>
+        <div class="row"><div class="rk">面板层</div><div class="rv"><strong>诚实边界</strong>：Grafana 面板已决定退役、改走 Prometheus API + 告警 webhook，但该项在清单里仍未勾选完成；采集与查询层不受影响。第三个声明面是 OTel，不在这里吹成独立平面。</div></div>
       </div>
     </div>
   </section>
@@ -132,14 +132,18 @@
   <section class="section" id="numbers">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">By the numbers</div><h2>线上设施的硬指标。</h2></div>
-        <p class="note">所有数字都来自真实运行，不是估算。</p>
+        <div><div class="overline">By the numbers</div><h2>线上设施的可复算口径。</h2></div>
+        <p class="note">每个数都写清它是什么的计数——数字可以被追问口径，不能只被仰望。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,205</div><div class="l">个任务被真实跑过</div></div>
-        <div class="fact"><div class="v">231,810</div><div class="l">次测试执行</div></div>
-        <div class="fact"><div class="v">1,131</div><div class="l">次异常上报</div></div>
-        <div class="fact"><div class="v">36</div><div class="l">次预置故障验证</div></div>
+        <div class="fact"><div class="v">1,205</div><div class="l">次提交（不是任务数）</div></div>
+        <div class="fact"><div class="v">223,237</div><div class="l">行自研代码（src+tests+scripts）</div></div>
+        <div class="fact"><div class="v">69</div><div class="l">条 test:guards 守卫</div></div>
+        <div class="fact"><div class="v">28</div><div class="l">条故障注入断言</div></div>
+      </div>
+      <div class="rows reveal" style="margin-top:22px">
+        <div class="row"><div class="rk">评测规模</div><div class="rv">38 个唯一任务 × 2 臂 = 76 条轨迹，结果台账 198 行；守卫实测 67/68 通过（1 条依赖 Temporal / Docker 外部栈）。</div></div>
+        <div class="row"><div class="rk">不放没有出处的数</div><div class="rv">这一页只放能在仓库里复算的数字。像「异常上报次数」「日志覆盖率」这类我指不出统计口径的项，我选择不写——一个说不清口径的数，比少一个数更糟。</div></div>
       </div>
     </div>
   </section>
