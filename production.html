@@ -62,7 +62,7 @@
       <div class="steps reveal">
         <div class="step"><div class="sn">01</div><div><h4>任务定义</h4><p>把模糊需求翻译成可验收的任务：边界、约束、验收标准。任务本身是可执行、可复现的工件，不是一句话。</p></div></div>
         <div class="step"><div class="sn">02</div><div><h4>隔离工作区与沙箱</h4><p>每个任务一个干净工作区；智能体生成的代码在 <strong>OpenSandbox</strong> 容器沙箱里执行，sandboxed 控制面默认 <strong>gVisor（runsc）</strong>，runc / docker 备援，设了 <code>E2B_API_KEY</code> 时走 E2B 微 VM。上一轮的残留不会污染下一轮。</p></div></div>
-        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p><strong>Temporal 是唯一执行权威</strong>：执行层用 child workflow 并行扇出，副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 保证恰好一次，崩溃后由 Workflow 重放恢复。Plan-Execute-Review 形态在 <code>workflows/planExecuteReview.ts</code>。</p></div></div>
+        <div class="step"><div class="sn">03</div><div><h4>智能体执行</h4><p><strong>Temporal 是唯一执行权威</strong>：child workflow 并行扇出，副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 保证恰好一次，崩溃后由重放恢复。线上实跑的是 <code>workflows/agentLoop.ts</code>；三段式 Plan-Execute-Review 已接线但默认不启用（见下）。</p></div></div>
         <div class="step"><div class="sn">04</div><div><h4>独立评测</h4><p>评测跑在只读、限定 cwd、断网的工具环里，不触生产 workflow；评分按五种方法范式的 rubric，扣分点尽量锚到 <code>file:line</code>，锚点缺失即 fail-loud。</p></div></div>
         <div class="step"><div class="sn">05</div><div><h4>数据回流</h4><p>轨迹、指标、经验回流成下一轮的任务与规则。跑得越多，飞轮越稳。</p></div></div>
       </div>
@@ -76,11 +76,12 @@
         <p class="note">不是一组写死的角色，而是以 Temporal 为唯一执行权威的运行时。下面每一项都标了源码位置，也包括我目前没做到的部分——比如 36 个角色库还只在 IDE 侧，运行时没有接。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">Temporal 执行权威</div><h3>恰好一次副作用</h3><p>执行层用 child workflow 并行扇出（<code>workflows/branch.ts:269-350</code>），副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 收口；崩溃恢复由 Workflow 重放提供，Temporal 是唯一事实源。</p></div>
-        <div class="card"><div class="k">编排形态</div><h3>Plan-Execute-Review</h3><p>三段式编排在 <code>workflows/planExecuteReview.ts</code>。<strong>诚实边界</strong>：<code>apexOrchestrator</code>（<code>orchestrator.ts</code>）是 TC-07 单步 PoC，文件头自陈「NOT a production candidate」，目前没有 src 调用方。</p></div>
-        <div class="card"><div class="k">36 个 specialist 定义</div><h3>角色库，尚未接入运行时</h3><p><code>.claude/agents/</code> 实测 36 个定义（analyst / architect / executor / planner / verifier / reviewer / debugger …）。<strong>诚实边界</strong>：<code>src/</code> 对它零引用，当前是 Claude Code / IDE 侧角色库，不是运行时里被动态调起的池子。</p></div>
+        <div class="card"><div class="k">Temporal 执行权威</div><h3>恰好一次副作用</h3><p><code>apexBranch</code> 用 child workflow 并行扇出（<code>workflows/branch.ts:269-350</code>），扇出由 MCP 的 <code>apex.delegate</code> 工具发起（<code>tools/fastmcp-server.ts:192</code>）；副作用靠 <code>workflowId = 幂等键</code> + <code>REJECT_DUPLICATE</code> 收口，崩溃恢复由重放提供。<code>apexAgentLoop</code> 同样以 <code>startChild</code> 把写操作交给 <code>apexSideEffect</code> 子工作流（<code>agentLoop.ts:256</code>）。</p></div>
+        <div class="card"><div class="k">编排形态</div><h3>Plan-Execute-Review：接线齐、流量零</h3><p>三段式编排在 <code>workflows/planExecuteReview.ts:288</code>，worker 已注册，分发点在 <code>pi-agent/run/route.ts:765</code> 与 <code>search/route.ts:1410</code>。两个分发点各要一个请求字段：<code>framework:"plan"</code>（缺省时 <code>route.ts:334</code> 回落 <code>agent</code>）与 <code>executionMode:"orchestration"</code>。实测发出方——全仓 <code>framework:"plan"</code> <strong>0 处</strong>（src / scripts / tests 都数过）；唯一发 <code>executionMode:"orchestration"</code> 的前端在 <code>agent-chat-thread.tsx:404</code>，打的却是 run 接口 ⇒ 仍回落 <code>agent</code>；<code>/api/apex/search</code> 的两个调用方都不带该字段 ⇒ 这条形态至今零真实流量。<strong>「代码在 src 里」不等于「生产在用」。</strong></p></div>
+        <div class="card wide"><div class="k">36 个 specialist 定义</div><h3>角色库，尚未接入运行时</h3><p><code>.claude/agents/</code> 实测 36 个定义（analyst / architect / executor / planner / verifier / reviewer / debugger …）。<strong>诚实边界</strong>：<code>src/</code> 对它零引用，当前是 Claude Code / IDE 侧角色库，不是运行时里被动态调起的池子。</p></div>
       </div>
       <div class="rows reveal" style="margin-top:18px">
+        <div class="row"><div class="rk">四条编排面分清</div><div class="rv"><strong>线上在跑</strong>：<code>apexAgentLoop</code>（<code>workflows/agentLoop.ts</code>，前端默认落点）。<strong>接线齐备、零流量</strong>：<code>apexPlanExecuteReview</code>。<strong>PoC、src 零调用</strong>：<code>apexOrchestrator</code>（<code>orchestrator.ts</code>，TC-07 单步，文件头自陈「NOT a production candidate」）。<strong>只在评测 harness</strong>：planner→executor→reviewer 三角色写权拓扑在 <code>scripts/paradigm-ab-executor.ts</code>，<code>src/</code> 对它零调用——它是评测面的实验处理，不是运行时功能。</div></div>
         <div class="row"><div class="rk">入口守卫</div><div class="rv"><strong>dispatchIngress</strong>：默认拒绝的白名单单接入点，外部流量只经它直交 Temporal，不中转、不在入口扇出。</div></div>
         <div class="row"><div class="rk">单写权威（TC-11）</div><div class="rv">业务只写 Temporal 一处；PostgreSQL 是可由 History 重建的 CQRS 读模型，Temporal 不可达时 fail-closed，绝不静默回退 PG。</div></div>
       </div>
@@ -110,7 +111,7 @@
       <div class="cards reveal">
         <div class="card"><div class="k">自愈</div><h3>重放 + 幂等 + 分级重试</h3><p>核心 run 用 <code>maximumAttempts = 1</code>：不盲重试，靠 Workflow 重放与幂等键恢复（<code>workflows/piRun.ts:49</code>）；<code>agentLoop</code> / Plan-Execute-Review 是 3 次，cron 任务 2 次。没有笼统的「最多重试 2 次」。</p></div>
         <div class="card"><div class="k">卡死收口</div><h3>claim TTL + 超时，不是 watchdog</h3><p>任务级回收靠 claim TTL 15 分钟、心跳陈旧 1 小时、崩溃检测 30 秒 + Temporal runTimeout（<code>hermes-kanban/constants.ts:66-79</code>）；<code>apex-worker-watchdog.mjs</code> 只做 worker <strong>进程级保活重拉</strong>。</p></div>
-        <div class="card"><div class="k">巡检与守卫</div><h3>26 项守卫 check · 76 条 test:guards</h3><p>judge 完整性 26-check 覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」四类静默缺陷；巡检与守卫脚本合计 1,523 行，本身被测试覆盖。</p></div>
+        <div class="card"><div class="k">巡检与守卫</div><h3>26 项守卫 check · 76 条 test:guards</h3><p>judge 完整性 26-check 覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」四类静默缺陷；巡检与守卫脚本合计 1,523 行，本身被测试覆盖。仓内记录的最近一次全量实跑是 <code>AGENTS.md</code> 里的 <strong>67/68 通过</strong>（1 条依赖 Temporal / Docker 外部栈），当时清单还不足 70 条——清单会长，所以通过率的<strong>日期比数值更要紧</strong>。</p></div>
         <div class="card"><div class="k">熔断</div><h3>看板派发器默认连续 2 次</h3><p><code>DEFAULT_FAILURE_LIMIT = 2</code>（<code>hermes-kanban/constants.ts:99</code>、<code>dispatch.ts:435</code>），先停、再看、再修。降级路径另有 <code>npm run test:fault-injection</code> 串跑 5 个测试来逼出真实行为：PG 真连不上、ANN+BM25 双 down、ANN down 时 BM25 扩窗、ES 降级、Temporal child-workflow 入口。</p></div>
       </div>
     </div>
@@ -142,10 +143,8 @@
         <div class="fact"><div class="v">76</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
         <div class="fact"><div class="v">5</div><div class="l">个故障注入测试串跑（<code>test:fault-injection</code>）</div></div>
       </div>
-      <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">评测规模</div><div class="rv">38 个唯一任务 × 2 臂 = 76 条轨迹；结果台账两份合计 206 行，按「任务 × 臂 × 批次」去重后 <strong>81 个格子</strong>。守卫清单现为 <strong>76 条</strong>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数、无重复、目标文件全在）。仓内记录的最近一次全量实跑是 <code>AGENTS.md</code> 里的 <strong>67/68 通过</strong>，当时清单还不足 70 条——清单会长，所以通过率的日期比数值更要紧。</div></div>
-        <div class="row"><div class="rk">计数怎么数</div><div class="rv">同一范围用 <code>xargs wc -l | tail -1</code> 只剩 71,506 行——分批求和被 <code>tail -1</code> 截断。所以这一页每个数都注明<strong>求和方式、范围口径、日期</strong>三件事，缺一就不放（详见 <a href="lessons.html#counting" style="color:var(--accent)">心得页第 01 节</a>）。</div></div>
-        <div class="row"><div class="rk">不放没有出处的数</div><div class="rv">这一页只放能在仓库里复算的数字。像「异常上报次数」「日志覆盖率」这类我指不出统计口径的项，我选择不写——一个说不清口径的数，比少一个数更糟。</div></div>
+      <div class="rows reveal" style="margin-top:22px">        <div class="row"><div class="rk">计数怎么数</div><div class="rv">同一范围用 <code>xargs wc -l | tail -1</code> 只剩 71,506 行——分批求和被 <code>tail -1</code> 截断。所以这一页每个数都注明<strong>求和方式、范围口径、日期</strong>，缺一就不放；评测侧的「206 行 → 81 个格子」口径见<a href="eval.html#numbers" style="color:var(--accent)">评测页</a>，计数方法本身见<a href="lessons.html#counting" style="color:var(--accent)">心得页第 01 节</a>。</div></div>
+        <div class="row"><div class="rk">不放没有出处的数</div><div class="rv">指不出统计口径的项（如「异常上报次数」「日志覆盖率」）这一页一律不写——说不清口径的数，比少一个数更糟。</div></div>
       </div>
     </div>
   </section>

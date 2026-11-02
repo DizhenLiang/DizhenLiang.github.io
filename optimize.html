@@ -61,7 +61,7 @@
       <div class="cards reveal">
         <div class="card"><div class="k">熔断</div><h3>看板派发器默认连续 2 次</h3><p>同类失败连续出现即停，避免在错误方向上继续烧钱。<code>DEFAULT_FAILURE_LIMIT = 2</code>（<code>hermes-kanban/constants.ts:99</code>），可被 per-task 上限覆盖。注意它护的是<strong>派发链路</strong>，不是每个执行环节都有熔断。</p></div>
         <div class="card"><div class="k">重试</div><h3>分级：核心 run 干脆不重试</h3><p>核心 <code>piRun</code> 是 <code>maximumAttempts = 1</code>——不重发，靠 Workflow 重放 + <code>workflowId</code> 幂等键恢复；<code>agentLoop</code> / Plan-Execute-Review 是 3 次指数退避，cron 2 次。重试是<strong>步级重放</strong>：transcript 由 workflow 累积，单个失败步本身从头再发。</p></div>
-        <div class="card"><div class="k">并发</div><h3>Kahn 拓扑分层扇出</h3><p>计划按依赖做 Kahn 拓扑分层（<code>shared/topo-sort.ts:31,85</code>、<code>plan-layers.ts</code>），同层用 child workflow <code>Promise.all</code> 并行扇出，跨层排队——不盲目并发导致互相踩踏。</p></div>
+        <div class="card"><div class="k">并发</div><h3>Kahn 拓扑分层扇出——在零流量那条形态上</h3><p>计划按依赖做拓扑分层（<code>shared/topo-sort.ts:31,85</code>、<code>plan-layers.ts</code>），同层用 child workflow <code>Promise.all</code> 并行扇出、跨层排队，不盲目并发互相踩踏。<strong>诚实边界</strong>：这两个模块在 <code>src/</code> 的唯一引用方是 <code>planExecuteReview.ts:55,57</code>，而那条形态线上零流量 ⇒ 分层扇出目前是「已实现、未被走到」，不是线上在跑的并发面。</p></div>
         <div class="card"><div class="k">取消</div><h3>信号贯通，回收靠 GC</h3><p><code>handle.cancel()</code> → activity 的 <code>cancellationSignal</code> → <code>interruptAcpProvider</code>，取消能真正打断在跑的一步（<code>activities/piAgent.ts:96,128-138</code>）。<strong>诚实边界</strong>：工作区不是取消即回收，靠 <code>workspace-gc.mts</code> 清理，且它默认 dry-run。</p></div>
       </div>
     </div>
@@ -75,7 +75,7 @@
       </div>
       <div class="rows reveal">
         <div class="row"><div class="rk">两级窗口 + 截断回读</div><div class="rv">超窗时保留头尾、中段替换成摘要（<code>[head + summary + tail]</code>，<code>pi-agent-compaction.ts:103-164</code>；拿不到摘要就原样放行），prompt 侧再留「关键行 + 你自己去读文件」的回捞指针（<code>prompt-builder.ts:480-499</code>）。L1 窗口策略目前只有 legacy ↔ jev-node 两档实验位（<code>l1-window-scheme.ts:2-13</code>）。</div></div>
-        <div class="row"><div class="rk">拓扑排序的真实用途</div><div class="rv">它排的是<strong>执行层的并发顺序</strong>（哪些步骤同层可并行），不是喂给模型的阅读顺序——这两件事容易被讲成一件，我分开说。</div></div>
+        <div class="row"><div class="rk">拓扑排序的真实用途</div><div class="rv">它排的是<strong>执行层的并发顺序</strong>（哪些步骤同层可并行），不是喂给模型的阅读顺序——这两件事容易被讲成一件。当前它只挂在零流量那条形态上，所以上面写「已实现、未被走到」。</div></div>
         <div class="row"><div class="rk">单份事实源</div><div class="rv">项目上下文单份落盘（<code>.apex-agent/project-context</code> + <code>context-dag</code>），每次请求现读 3 个文件、被多个路由复用（<code>project-context.ts:573-592</code>）。<strong>边界</strong>：没有跨 Agent 的上下文缓存或去重，所以是「一份事实源被多处复用」，不是「共享上下文省 token」。</div></div>
       </div>
     </div>
@@ -91,7 +91,7 @@
         <div class="card"><div class="k">缓存</div><h3>工具结果按参数指纹复用</h3><p>缓存键 <code>tool:${toolName}:${argsHash}</code> + TTL（<code>harness-postgres.ts:576,659</code>），另有命中率指标（<code>production-metrics.ts:151</code>）。<strong>已知短板</strong>：缓存键没有版本位，schema 变更后旧结果可能被复用——记在待办里，不是已解决。</p></div>
         <div class="card"><div class="k">批处理</div><h3>真实生效的只有两处</h3><p>embedding 批量池化（<code>embed-pool.ts:58</code>、<code>fastembed-service.ts:237-287</code>）与 ES <code>_bulk</code> 200 条/批（<code>elasticsearch-client.ts:210</code>）。<strong>边界</strong>：LLM 侧「同质小请求合批」没有实现，只有上面这两条路径真在批处理。</p></div>
         <div class="card"><div class="k">模型分层</div><h3>按角色配槽 + 故障转移链</h3><p>真实机制是<strong>角色化模型槽</strong>与 fallback 链（<code>model-orchestration.ts:78-84</code>），小模型只用在检索改写等辅助槽。<strong>边界</strong>：三个角色目前默认同一个模型，「分类走小模型、推理走大模型」的动态路由判据还不存在。</p></div>
-        <div class="card"><div class="k">预算</div><h3>token / 轮次 / 时间三类上限</h3><p><code>tokenBudget</code> 触发早停（<code>planner-executor.ts:92,217-227</code>）、轮次帽（<code>pi-agent-loop-guard.ts:42,177-237</code>）、时间上限（<code>pi-agent-runner.ts:856,974</code>）。超预算是直接早停或抛错，<strong>没有</strong>「先降级再熔断」那条链。</p></div>
+        <div class="card"><div class="k">预算</div><h3>轮次与时间帽在跑，token 帽在休眠件里</h3><p>线上实跑的是轮次帽（<code>pi-agent-loop-guard.ts:42,177-237</code>）与时间上限（<code>pi-agent-runner.ts:856,974</code>），超了就早停或抛错，<strong>没有</strong>「先降级再熔断」那条链。<strong>诚实边界</strong>：<code>tokenBudget</code> 早停写在 <code>planner-executor.ts:92,217-227</code> 的双智能体编排类里，而该类全仓 <code>new</code> 计数为 <strong>0</strong>——它是休眠件，我不把它算成在跑的预算面。</p></div>
       </div>
     </div>
   </section>

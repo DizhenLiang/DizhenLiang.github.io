@@ -126,6 +126,8 @@ p{margin:0}
 .card h3{font-size:17px;margin-bottom:9px;letter-spacing:-.01em}
 .card p{font-size:14px;color:var(--text-soft);line-height:1.72}
 .card .meta{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.card.wide{grid-column:1/-1}
+.card.wide p{max-width:78ch}
 
 /* branch cards (links) */
 .branches{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}

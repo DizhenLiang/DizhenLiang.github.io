@@ -106,7 +106,7 @@
       </div>
       <div class="cards reveal">
         <div class="card"><div class="k">拒收而非提醒</div><h3>「没落盘就不算做完」要变成门</h3><p>有格子跑完整个流程、最终输出很完整，但落盘证据是 <strong>NONE</strong>——按口径这是零分。此后 final 被接受之前，会拿任务钦定的交付清单对照本次写入台账，缺件就拒收并借一轮。<strong>写盘优先的提示只发给该写盘的角色。</strong></p></div>
-        <div class="card"><div class="k">分角色</div><h3>别把审查者逼成第二作者</h3><p>同一道门最初对所有角色生效，于是审查者被推着去补写它无权改的交付本体：借一轮、被拒、空转。现在每个阶段只被推它<strong>自己有权写</strong>的东西（executor 不限；planner 只写自己的计划文档；reviewer 只写测试执行报告），缺陷一律以 <code>REWORK</code> 行回流给 executor。</p><div class="meta"><code>roleWriteAllowance()</code> / <code>roleGetsWriteFirstNudge()</code></div></div>
+        <div class="card"><div class="k">分角色</div><h3>别把审查者逼成第二作者</h3><p>同一道门最初对所有角色生效，于是审查者被推着去补写它无权改的交付本体：借一轮、被拒、空转。现在每个阶段只被推它<strong>自己有权写</strong>的东西（executor 不限；planner 只写自己的计划文档；reviewer 只写测试执行报告），缺陷一律以 <code>REWORK</code> 行回流给 executor。</p><div class="meta"><code>roleWriteAllowance()</code> / <code>roleGetsWriteFirstNudge()</code> —— 均在 <code>scripts/paradigm-ab-executor.ts:2967</code>，<code>src/</code> 零调用：这是评测 harness 的机制，不是生产运行时功能</div></div>
         <div class="card"><div class="k">写通道内部</div><h3>检查必须放在真正写盘的那一层</h3><p>主循环里加判断是不够的：工具走的是通用调用平面，末步还有一条把正文倒灌成文件的补救通道。拒收逻辑下沉到写通道本身，四个补救入口共用同一份白名单。</p><div class="meta">否则「绕过去」不是漏洞，是默认路径</div></div>
         <div class="card"><div class="k">顺序即语义</div><h3>角色段要排在任务正文之前</h3><p>装配顺序原来是「裸正文 → 角色段 → 上游输入」，模型先读完完整任务书、再把角色段当补充说明，分工容易被忽略。现在是<strong>角色段 → 裸正文（两臂逐字节同一份）→ 上游输入</strong>。<code>buildRoleTurnInstruction()</code> 把这个顺序写成一个纯函数，被守卫锁住。</p></div>
       </div>
@@ -143,6 +143,7 @@
         <div class="card"><div class="k">历史读数</div><h3>先查它的取证日期，再决定能不能用来定价</h3><p>注释里「同一份文件被重读 4–14 遍」出自 2026-10-09 的轨迹取证，而截断与白回放两处缺陷 10-14 就修了——那串数字<strong>不能拿来给今天的设施定成本</strong>。本批全量台账里，死于复读型停止的格子集中在控制臂，不在方法注入臂。</p></div>
         <div class="card"><div class="k">探针自错</div><h3>工具会静默告诉你「没有」</h3><p>踩过四类：Windows 下内联脚本经 <code>cmd.exe</code> 执行导致检索类探针<strong>静默假阴性</strong>；追踪服务的列表接口上限 100，传 1000 会<strong>返回空数组而不是报错</strong>；目录联接递归删会穿透到真实源码树；MSYS 会把 <code>/run</code> 这类参数改写成盘符路径。</p><div class="meta">每个探针都要带一个阳性对照，否则「查不到」无法区分「不存在」与「查错了」</div></div>
         <div class="card"><div class="k">外置什么</div><h3>判定基准可以外置，执行提示不行</h3><p>把验收契约写进独立文件、让版本历史可 diff，是被验证有效的做法（设计方案文件 14 份全部被 git 跟踪且与盘上一致）。但把它喂给模型当输入，就<strong>把判定基准降级成了执行提示</strong>——测出来的不再是「履约能力」。</p></div>
+        <div class="card wide"><div class="k">今天的现场案例</div><h3>「已注册 + 有分发点」仍不等于「在生产跑」</h3><p>被问「三段式编排进生产了吗」，三桶计数给出的答案不是是或否：<code>apexPlanExecuteReview</code> 在 <code>src/</code> 有 workflow、有 worker 注册、有两个 API 分发点，但两个分发点各要一个请求字段（<code>framework:"plan"</code> / <code>executionMode:"orchestration"</code>），而实测发出方：前者全仓 <strong>0 处</strong>（src / scripts / tests 都数过），后者唯一的前端调用打在需要另一个字段的 run 接口上 ⇒ <strong>线上零流量</strong>；planner→executor→reviewer 的三角色拓扑 <code>src/</code> 调用数为 <strong>0</strong>，只在 <code>scripts/</code>；范式引擎的 <code>registry.json</code> 确实已提交入库，总开关却是 <code>config.yaml:200</code> 的 <code>enabled: false</code>。</p><div class="meta">补第四问：谁真的发出了那个触发字段——分发点存在 ≠ 有请求方走它</div></div>
       </div>
     </div>
   </section>
@@ -154,6 +155,7 @@
         <p class="note">每一页都带源码位置和一份「没做到」清单。写清局限的成本远低于被追问出来。</p>
       </div>
       <ul class="list reveal">
+        <li><strong>「代码在 src 里」和「在生产跑」是两件事</strong>——线上实跑 <code>apexAgentLoop</code>；三段式 Plan-Execute-Review 接线齐备但零流量，三角色写权拓扑只在评测 harness，范式引擎总开关默认关。这一页不用它们讲成「生产已经在用」。</li>
         <li><strong>跳步与返工仍是 proxy 口径</strong>——由执行段自己统计，还没接成工作流历史真值；改造方案已写好，未落地，所以列成待办而不是成果。</li>
         <li><strong>动态路由 96% 是影子模式</strong>——只记录不生效；预估省 43%（454 vs 799 轮）成立，但先验用的是同批任务，属样本内估计。</li>
         <li><strong>组合臂从未起跑</strong>——把两种方法叠在一起跑的那条路径，账面上标记字段命中 <strong>0 行</strong>；本轮只是把它三个会静默失败的前提修掉了。</li>

@@ -98,7 +98,7 @@
         <a class="branch" href="production.html">
           <div class="top"><span class="num">01 / PRODUCTION</span><span class="arrow">→</span></div>
           <h3>生产级线上设施</h3>
-          <p>飞轮怎么转、Temporal 执行权威怎么保证恰好一次副作用、入口守卫与单写权威怎么收口、沙箱怎么隔离、巡检与熔断怎么兜底。</p>
+          <p>飞轮怎么转、Temporal 执行权威怎么保证恰好一次副作用、四条编排面怎么分清（线上在跑的 / 接线齐但零流量的 / PoC / 只在评测 harness）、沙箱与熔断怎么兜底。</p>
           <div class="tags"><span class="tag">飞轮</span><span class="tag">Temporal 执行权威</span><span class="tag">入口守卫 · TC-11</span><span class="tag">沙箱隔离</span></div>
         </a>
         <a class="branch" href="deploy.html">
@@ -142,10 +142,10 @@
         <div class="fact"><div class="v">76</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">口径</div><div class="rv">1,211 是提交数不是任务数，真实跑过的唯一任务 38 个。258,283 是代码行数，不是测试执行次数：git 跟踪的测试文件 <strong>162</strong> 个（<code>*.test.ts/.tsx/.mts</code>），用例声明 990 条。行数必须单遍求和——用 <code>xargs wc -l | tail -1</code> 会因参数被拆成多段而只数到最后一批，同一范围实测只剩 71,506；数字没核对过求和方式，就等于没核对过。</div></div>
-        <div class="row"><div class="rk">行数≠格子数</div><div class="rv">两份结果台账合计 <strong>206 行</strong>，按「任务 × 臂 × 批次」去重后只有 <strong>81 个格子</strong>，重复率 154.3%。10-30 那份「76/76 全有判分、零缺口」的结论，就是数了行、宣布了格子、中间漏了去重。台账还没有运行标识列，实测 4 / 81 个格子的两次运行塌缩成一行。</div></div>
-        <div class="row"><div class="rk">本轮新增</div><div class="rv">2026-11-02 把两条分工写成了代码与守卫：提示词装配顺序固定为<strong>角色段 → 任务正文 → 上游输入</strong>，以及相位写权——计划与审查角色<strong>不能改动执行者的交付本体</strong>，缺陷以 <code>REWORK</code> 行回流。29 项检查跑绿，并用 8 种改坏证明它真的会变红。</div></div>
-        <div class="row"><div class="rk">未落地</div><div class="rv">81 个任务里 <strong>41 个从未执行</strong>，这是配对数不足的唯一根因；组合范式臂（把两种方法叠在同一次运行）至今 <strong>0 行</strong>入账，本轮只修掉了它三个会静默失败的前提；跳步 / 返工仍是执行段自报的 proxy 口径；动态路由 96% 停在只记录不生效的影子模式。跨 judge 漂移实测：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
+        <div class="row"><div class="rk">口径</div><div class="rv">1,211 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>162</strong> 个（<code>*.test.ts/.tsx/.mts</code>）、用例声明 990 条、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
+        <div class="row"><div class="rk">行数≠格子数</div><div class="rv">两份台账合计 <strong>206 行</strong>，按「任务 × 臂 × 批次」去重后只有 <strong>81 个格子</strong>（重复率 154.3%）。10-30 那句「76/76 全有判分、零缺口」就是这么来的：数了行、宣布了格子、中间漏了去重。台账还没有运行标识列，4 / 81 个格子的两次运行塌缩成同一行。</div></div>
+        <div class="row"><div class="rk">本轮新增</div><div class="rv">2026-11-02 把两条分工写成代码与守卫：装配顺序固定为<strong>角色段 → 任务正文 → 上游输入</strong>；相位写权——计划与审查角色<strong>不能改动执行者的交付本体</strong>，缺陷以 <code>REWORK</code> 行回流。29 项检查跑绿，8 种改坏全部变红。</div></div>
+        <div class="row"><div class="rk">未落地</div><div class="rv">81 个任务里 <strong>41 个从未执行</strong>，这是配对数不足的唯一根因；组合范式臂至今 <strong>0 行</strong>入账，本轮只修掉它三个会静默失败的前提；跳步 / 返工仍是执行段自报的 proxy 口径；动态路由 96% 停在只记录不生效的影子模式；三段式编排接线齐备但线上零流量。跨 judge 漂移：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
       </div>
     </div>
   </section>
