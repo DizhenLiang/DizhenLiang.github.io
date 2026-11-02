@@ -129,6 +129,8 @@ p{margin:0}
 
 /* branch cards (links) */
 .branches{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.branch.wide{grid-column:1/-1}
+.branch.wide p{max-width:70ch}
 @media(max-width:760px){.branches{grid-template-columns:1fr}}
 .branch{
   display:flex;flex-direction:column;gap:14px;padding:26px;border-radius:13px;

@@ -21,6 +21,7 @@
       <a href="deploy.html">部署</a>
       <a href="optimize.html">优化</a>
       <a href="eval.html">评测</a>
+      <a href="lessons.html">心得</a>
       <a href="index.html#contact" class="cta">联系</a>
     </nav>
   </div>
@@ -109,7 +110,7 @@
       <div class="cards reveal">
         <div class="card"><div class="k">自愈</div><h3>重放 + 幂等 + 分级重试</h3><p>核心 run 用 <code>maximumAttempts = 1</code>：不盲重试，靠 Workflow 重放与幂等键恢复（<code>workflows/piRun.ts:49</code>）；<code>agentLoop</code> / Plan-Execute-Review 是 3 次，cron 任务 2 次。没有笼统的「最多重试 2 次」。</p></div>
         <div class="card"><div class="k">卡死收口</div><h3>claim TTL + 超时，不是 watchdog</h3><p>任务级回收靠 claim TTL 15 分钟、心跳陈旧 1 小时、崩溃检测 30 秒 + Temporal runTimeout（<code>hermes-kanban/constants.ts:66-79</code>）；<code>apex-worker-watchdog.mjs</code> 只做 worker <strong>进程级保活重拉</strong>。</p></div>
-        <div class="card"><div class="k">巡检与守卫</div><h3>26 项守卫 check · 70 条 test:guards</h3><p>judge 完整性 26-check 覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」四类静默缺陷；巡检与守卫脚本合计 1,523 行，本身被测试覆盖。</p></div>
+        <div class="card"><div class="k">巡检与守卫</div><h3>26 项守卫 check · 76 条 test:guards</h3><p>judge 完整性 26-check 覆盖「分数缺失、理由为空、锚点不存在、阶段跳过」四类静默缺陷；巡检与守卫脚本合计 1,523 行，本身被测试覆盖。</p></div>
         <div class="card"><div class="k">熔断</div><h3>看板派发器默认连续 2 次</h3><p><code>DEFAULT_FAILURE_LIMIT = 2</code>（<code>hermes-kanban/constants.ts:99</code>、<code>dispatch.ts:435</code>），先停、再看、再修。降级路径另有 <code>npm run test:fault-injection</code> 串跑 5 个测试来逼出真实行为：PG 真连不上、ANN+BM25 双 down、ANN down 时 BM25 扩窗、ES 降级、Temporal child-workflow 入口。</p></div>
       </div>
     </div>
@@ -136,13 +137,14 @@
         <p class="note">每个数都写清它是什么的计数——数字可以被追问口径，不能只被仰望。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,206</div><div class="l">次提交（不是任务数）</div></div>
-        <div class="fact"><div class="v">256,493</div><div class="l">行自研代码（src+tests+scripts，1,038 个文件）</div></div>
-        <div class="fact"><div class="v">70</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
+        <div class="fact"><div class="v">1,211</div><div class="l">次提交（不是任务数，2026-11-02 复算）</div></div>
+        <div class="fact"><div class="v">258,283</div><div class="l">行自研代码（src+tests+scripts，1,040 个文件，单遍求和）</div></div>
+        <div class="fact"><div class="v">76</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
         <div class="fact"><div class="v">5</div><div class="l">个故障注入测试串跑（<code>test:fault-injection</code>）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">评测规模</div><div class="rv">38 个唯一任务 × 2 臂 = 76 条轨迹，结果台账 198 行；守卫清单现为 <strong>70 条</strong>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数、无重复、目标文件全在）。仓内记录的最近一次全量实跑是 <code>AGENTS.md</code> 里的 <strong>67/68 通过</strong>（1 条依赖 Temporal / Docker 外部栈），当时清单还不足 70 条——清单会长，所以通过率的日期比数值更要紧。</div></div>
+        <div class="row"><div class="rk">评测规模</div><div class="rv">38 个唯一任务 × 2 臂 = 76 条轨迹；结果台账两份合计 206 行，按「任务 × 臂 × 批次」去重后 <strong>81 个格子</strong>。守卫清单现为 <strong>76 条</strong>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数、无重复、目标文件全在）。仓内记录的最近一次全量实跑是 <code>AGENTS.md</code> 里的 <strong>67/68 通过</strong>，当时清单还不足 70 条——清单会长，所以通过率的日期比数值更要紧。</div></div>
+        <div class="row"><div class="rk">计数怎么数</div><div class="rv">同一范围用 <code>xargs wc -l | tail -1</code> 只剩 71,506 行——分批求和被 <code>tail -1</code> 截断。所以这一页每个数都注明<strong>求和方式、范围口径、日期</strong>三件事，缺一就不放（详见 <a href="lessons.html#counting" style="color:var(--accent)">心得页第 01 节</a>）。</div></div>
         <div class="row"><div class="rk">不放没有出处的数</div><div class="rv">这一页只放能在仓库里复算的数字。像「异常上报次数」「日志覆盖率」这类我指不出统计口径的项，我选择不写——一个说不清口径的数，比少一个数更糟。</div></div>
       </div>
     </div>
@@ -153,7 +155,7 @@
   <div class="wrap">
     <div class="grid">
       <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者</div>
-      <div class="links"><a href="index.html">主页</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+      <div class="links"><a href="index.html">主页</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="lessons.html">心得</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
     </div>
     <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
   </div>

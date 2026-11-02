@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实操心得 · 范式无关 · 梁迪臻</title>
+<meta name="description" content="长任务智能体系统的范式无关实操经验：计数口径、台账原子写、断言要能变红、结构强制优于提示词祈祷、统计效力预注册、取证方法与探针自错。每条可复算或已变成会变红的守卫。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot"></span> 梁迪臻 <span class="sub">APEX-AGENT · LIVE</span></a>
+    <nav class="nav">
+      <a href="index.html">主页</a>
+      <a href="production.html">生产设施</a>
+      <a href="deploy.html">部署</a>
+      <a href="optimize.html">优化</a>
+      <a href="eval.html">评测</a>
+      <a href="lessons.html" class="active">心得</a>
+      <a href="index.html#contact" class="cta">联系</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap grid">
+      <div>
+        <div class="eyebrow">Lessons / 与用哪种方法无关</div>
+        <h1>方法可以换，<br>能证伪的<span class="em">设施不能换</span>。</h1>
+        <p class="lede">这一页只收「范式无关」的经验：换任何工程方法、换任何项目都成立的那部分。每条后面都跟着它当场复算出来的数，或者已经变成一条会变红的守卫——只讲故事不算经验。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="eval.html#scenario">范式按产品场景 →</a>
+          <a class="btn btn-ghost" href="production.html">回看设施</a>
+        </div>
+      </div>
+      <div class="trace" aria-hidden="true">
+        <div class="trace-head"><span>AUDIT TRACE</span><span class="live"><i></i>2026-11-02</span></div>
+        <div class="trace-body">
+          <div class="trow"><span class="idx">01</span><span class="act">count</span><span class="detail">258,283 行 · 单遍求和</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">dedupe</span><span class="detail">206 行 → 81 个格子</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">fingerprint</span><span class="detail">sha256 <code>68e40f72…</code> 未变</span><span class="st ok">done</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">overwrite</span><span class="detail">12:03 同 inode 就地覆写</span><span class="st run">caught</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">red-proof</span><span class="detail">29 PASS / 8 种改坏全变红</span><span class="st ok">done</span></div>
+        </div>
+        <div class="trace-foot"><span>口径 · 复算 · 变红</span><span>◎ 数字没核对过求和方式 = 没核对过</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="counting">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">01 / Counting</div><h2>任何计数，落笔前先固定三件事。</h2></div>
+        <p class="note">求和方式、范围口径、日期。这三件没固定，「审计数字」只会把错数换成另一个错数——我自己踩过四次。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">求和方式</div><h3><code>xargs wc -l | tail -1</code> 造出一个假数</h3><p><code>xargs</code> 会把超长文件清单拆成多批，每批各打一个 <code>total</code>，<code>tail -1</code> 只取最后一批。同一范围这样算只剩 <strong>71,506</strong> 行；单遍求和的真实值是 <strong>258,283 行 / 1,040 个文件</strong>（<code>src</code> + <code>tests</code> + <code>scripts</code>，2026-11-02 复算）。</p><div class="meta">凡 <code>xargs … | tail -1</code> 得到的 total 都不可信</div></div>
+        <div class="card"><div class="k">行数 ≠ 格子数</div><h3>10-30 那份「零缺口」结论就是这么来的</h3><p>两份台账合计 <strong>206 行</strong>，去重后只有 <strong>81 个格子</strong>（一个「任务 × 臂」的评测单元）；重复 125 行，重复率 <strong>154.3%</strong>。只看主台账是 198 行 → 76 个格子。数的是行、宣布的是 cell、中间没有去重步骤，就会报出「全有判分、零缺口」。</p><div class="meta">取数规则：同一 key 只认最新行，且必须先声明 key 的组成</div></div>
+        <div class="card"><div class="k">范围口径</div><h3>「测试文件 307」和「162」可以都对</h3><p>差别只在把 <code>.claude/</code> 里的角色库测试算不算。现在的公开口径一律写清范围：<strong>git 跟踪的 <code>*.test.ts / .tsx / .mts</code> = 162 个</strong>，其中用例声明（<code>it()</code>/<code>test()</code>）990 条；API 路由 61 个（<code>src/app/api/**/route.ts</code>）。口径不写，数字就会被当成立场。</p><div class="meta">同一指标只在一处定义，别处引用</div></div>
+        <div class="card"><div class="k">日期</div><h3>会自己漂的数必须带复算命令</h3><p>提交数 10-30 是 1,205、11-01 是 1,206、今天 <strong>1,211</strong>——不是我数错，是它在长。守卫清单从 70 条长到 <strong>76 条</strong>（无重复、目标文件全部存在）。所以公开页每个数都带日期和一行命令，读的人能自己重跑。</p><div class="meta"><code>git rev-list --count HEAD</code> = 1,211（2026-11-02）</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="ledger">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">02 / Evidence Plane</div><h2>评测的账本，比代码更容易被写坏。</h2></div>
+        <p class="note">结论可以重算，前提是你手里那份轨迹数据没被悄悄改过。今天中午就抓到一次现场。</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step"><div class="sn">现象</div><div><h4>台账 mtime 变了，内容一个字节没变</h4><p>主台账 <code>results-v5-30s-fullredo-20261013.jsonl</code>：修改时间 12:03:18，inode 与创建时间（10-26）都没变，sha256 与 11-01 的快照逐字节一致（<code>68e40f72…</code>）。⇒ 这是<strong>打开后整文件就地覆写</strong>，不是临时文件改名；写入方是并行会话，不是我这边（我对它只有三次只读探针）。</p></div></div>
+        <div class="step"><div class="sn">后果</div><div><h4>任何在窗口里读台账的程序都会读到截断</h4><p>同一条守卫命令在 20 分钟内出现 <code>13 PASS / 0 FAIL</code> → 若干项红 → <code>13 PASS / 0 FAIL</code>，而期间文件哈希恒定。这不是测试不稳定（flake），是<strong>消费者撞上了写入者的覆写窗口</strong>。把它记成「环境问题」，下一批数据还会再撞。</p></div></div>
+        <div class="step"><div class="sn">修法</div><div><h4>原子写 + 每行带 run 标识 + 占位行不得覆盖真判定</h4><p>三件事：<strong>①</strong> 写台账改 temp+rename，杜绝中间态可见；<strong>②</strong> 每行加 <code>runId</code> / <code>attempt</code>（第几次跑）——现在 206 行全都没有，唯一疑似标识重跑同值，导致 <strong>4 / 81 个格子</strong>的两次 run 塌缩成一行，被藏的早期分数找不回来；<strong>③</strong>「取最新行」要有权威规则：占位分不得覆盖同 key 已有的真判定。</p></div></div>
+        <div class="step"><div class="sn">复算</div><div><h4>判「有没有被改」用四个量，不用印象</h4><p><code>sha256sum</code>（内容）＋ inode（是否换了文件）＋ birth（创建时间）＋ mtime。只看 mtime 会误报「数据变了」，只看哈希会漏报「刚被覆写过」。</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="red">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">03 / Fail-Loud</div><h2>断言要能变红——包括守卫自己。</h2></div>
+        <p class="note">一条永远不会失败的断言不是测试，是装饰。这句话对我自己写的守卫同样成立。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">红证</div><h3>新守卫必须先被改坏一次</h3><p>本轮把「角色段装配顺序 + 相位写权」钉成 <strong>29 项检查</strong>（<code>tests/paradigm-ab-role-phase.test.ts</code>，29 PASS / 0 FAIL）。它立项前跑了 8 种改坏：把 reviewer 写权放开、把顺序改回裸正文在前、把交付物路径写歪、去掉 rescue 通道的白名单过滤、把「小缺陷可自修」的提示词加回去、去掉组合臂的并集、把逼写盘的门恢复成不分角色……<strong>8 种全部变红</strong>，才允许收进 <code>run-guards.mjs</code>（第 338 行）。</p><div class="meta">改坏只作用于 <code>.omc/tmp</code> 下的源码副本——工作区被多个会话共用，不动真实文件</div></div>
+        <div class="card"><div class="k">双向白名单</div><h3>已知缺陷的豁免清单也会过期</h3><p>台账完整性守卫带一份白名单，写清当前已知缺陷。<strong>多一个缺陷要红，缺陷被修掉后条目没删也要红</strong>——否则白名单会退化成第二个没人读的 TODO。</p></div>
+        <div class="card"><div class="k">判据同源</div><h3>报告与 CI 共用同一份纯函数</h3><p>全量轨迹复算脚本既出报告数字，也导出判定函数（识别占位分、final 未落盘、跨文件同 key、重跑塌缩）。报告的数和 CI 的红不可能漂移，因为不是两套实现。</p><div class="meta">纯读、零网络、零改台账</div></div>
+        <div class="card"><div class="k">假阳性也要防</div><h3>「全绿」之前先证全覆盖</h3><p>写「某个字段从没被写过」之前，我先按嵌套路径去测，得到过错误结论；同一字段其实写在行的顶层。规矩变成：报「有问题」前先证伪自己，报「没问题」前先确认探针打在了正确的位置。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="forcing">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">04 / Structure over Prompt</div><h2>在提示词里祈祷模型自觉，已经被实证无效。</h2></div>
+        <p class="note">要改变行为，就改结构：谁有权写、什么时候必须写、写不进就拒收。四件事，每件都有对应的落地位置。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">拒收而非提醒</div><h3>「没落盘就不算做完」要变成门</h3><p>有格子跑完整个流程、最终输出很完整，但落盘证据是 <strong>NONE</strong>——按口径这是零分。此后 final 被接受之前，会拿任务钦定的交付清单对照本次写入台账，缺件就拒收并借一轮。<strong>写盘优先的提示只发给该写盘的角色。</strong></p></div>
+        <div class="card"><div class="k">分角色</div><h3>别把审查者逼成第二作者</h3><p>同一道门最初对所有角色生效，于是审查者被推着去补写它无权改的交付本体：借一轮、被拒、空转。现在每个阶段只被推它<strong>自己有权写</strong>的东西（executor 不限；planner 只写自己的计划文档；reviewer 只写测试执行报告），缺陷一律以 <code>REWORK</code> 行回流给 executor。</p><div class="meta"><code>roleWriteAllowance()</code> / <code>roleGetsWriteFirstNudge()</code></div></div>
+        <div class="card"><div class="k">写通道内部</div><h3>检查必须放在真正写盘的那一层</h3><p>主循环里加判断是不够的：工具走的是通用调用平面，末步还有一条把正文倒灌成文件的补救通道。拒收逻辑下沉到写通道本身，四个补救入口共用同一份白名单。</p><div class="meta">否则「绕过去」不是漏洞，是默认路径</div></div>
+        <div class="card"><div class="k">顺序即语义</div><h3>角色段要排在任务正文之前</h3><p>装配顺序原来是「裸正文 → 角色段 → 上游输入」，模型先读完完整任务书、再把角色段当补充说明，分工容易被忽略。现在是<strong>角色段 → 裸正文（两臂逐字节同一份）→ 上游输入</strong>。<code>buildRoleTurnInstruction()</code> 把这个顺序写成一个纯函数，被守卫锁住。</p></div>
+      </div>
+      <div class="rows reveal" style="margin-top:22px">
+        <div class="row"><div class="rk">同一条的另一面</div><div class="rv">提示词说「你能写」、通道却拒收 = 必然空转一轮。三个角色的系统提示词自述与写权一致性，现在是一条独立的检查项，而不是靠人眼对稿。</div></div>
+        <div class="row"><div class="rk">改语义的代价</div><div class="rv">装配顺序和写权两条<strong>改变了两个臂的行为</strong>，历史格子不能直接和新格子混池比较：读数一律按改动日分桶，路由先验（阶段 → 收益的估计）需要重估。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="stats">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">05 / Statistical Rigor</div><h2>门槛要在开跑前锁死，不是在出分后解释。</h2></div>
+        <p class="note">评测最容易自欺的一步，是拿刚好过线的样本宣布结论。</p>
+      </div>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">样本量</div><div class="rv">三个参数定门槛：<strong>α=0.05、功效 0.8、最小效应 d=0.5</strong> → 配对检验约需 <strong>60 对</strong>。为什么留余量：实测剔除率约 <strong>50%</strong>（缺臂 / 污染 / 假 max-turns）。现在严格键下只有 <strong>33 对</strong>，所以每个结论后面都跟着「方向性信号，不是可推广结论」。</div></div>
+        <div class="row"><div class="rk">多重比较</div><div class="rv">五个阶段同时检验，不校正的话「至少撞上一次显著」的概率约 <strong>23%</strong>。用 Holm 按 p 值从小到大递减阈值卡，比朴素 Bonferroni 更有功效。</div></div>
+        <div class="row"><div class="rk">分尺陈述</div><div class="rv">同一批数据上有两把尺：<strong>人工判分</strong>与<strong>机器判分</strong>，它们可以给出符号相反的结论。DP 在人工判分尺上是 <strong>+0.153</strong>，剔除 6 个作废格子后升到 <strong>+0.214</strong>——污染量 <strong>+0.061</strong> 的方向对 DP 有利，所以 +0.153 本身就是被占位 0 压低过的保守值；而在机器判分尺上只有 <strong>6 对、−0.167</strong>。混在一起报「平均 +0.0X」就是把两把尺折成一把不存在的尺。</div></div>
+        <div class="row"><div class="rk">预注册</div><div class="rv">主终点、判据、批次口径在跑之前写进 <code>registration.json</code>，跑完不能改口。这条纪律的价值不在严谨，而在让「事后调整口径」变得可被发现。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="forensics">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">06 / Forensics</div><h2>判断「真的在跑」，只有一条判据：调用方计数。</h2></div>
+        <p class="note">注释、文档、注册表怎么声称都不算证据；源码里有没有调用方、什么时候被触发才算。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">三桶计数</div><h3>tests 里有断言 ≠ 运行时会触发</h3><p>任何「部件是否生效」的问题都按三个桶数调用方：<code>src/</code>（真实运行时）／<code>tests/</code>（回归夹具，<strong>不算落地</strong>）／<code>scripts/</code>（人工触发，<strong>不算自动接线</strong>）。最常见的误判是把 <code>scripts/</code> 里的 verify 脚本当成生产链路。</p><div class="meta">注册成功 ≠ 被分发：能找到 handler 的注册、找不到分发点的调用，handler 永不触发</div></div>
+        <div class="card"><div class="k">历史读数</div><h3>先查它的取证日期，再决定能不能用来定价</h3><p>注释里「同一份文件被重读 4–14 遍」出自 2026-10-09 的轨迹取证，而截断与白回放两处缺陷 10-14 就修了——那串数字<strong>不能拿来给今天的设施定成本</strong>。本批全量台账里，死于复读型停止的格子集中在控制臂，不在方法注入臂。</p></div>
+        <div class="card"><div class="k">探针自错</div><h3>工具会静默告诉你「没有」</h3><p>踩过四类：Windows 下内联脚本经 <code>cmd.exe</code> 执行导致检索类探针<strong>静默假阴性</strong>；追踪服务的列表接口上限 100，传 1000 会<strong>返回空数组而不是报错</strong>；目录联接递归删会穿透到真实源码树；MSYS 会把 <code>/run</code> 这类参数改写成盘符路径。</p><div class="meta">每个探针都要带一个阳性对照，否则「查不到」无法区分「不存在」与「查错了」</div></div>
+        <div class="card"><div class="k">外置什么</div><h3>判定基准可以外置，执行提示不行</h3><p>把验收契约写进独立文件、让版本历史可 diff，是被验证有效的做法（设计方案文件 14 份全部被 git 跟踪且与盘上一致）。但把它喂给模型当输入，就<strong>把判定基准降级成了执行提示</strong>——测出来的不再是「履约能力」。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="honest">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">07 / Boundaries</div><h2>诚实边界不是免责声明，是这个站点的差异点。</h2></div>
+        <p class="note">每一页都带源码位置和一份「没做到」清单。写清局限的成本远低于被追问出来。</p>
+      </div>
+      <ul class="list reveal">
+        <li><strong>跳步与返工仍是 proxy 口径</strong>——由执行段自己统计，还没接成工作流历史真值；改造方案已写好，未落地，所以列成待办而不是成果。</li>
+        <li><strong>动态路由 96% 是影子模式</strong>——只记录不生效；预估省 43%（454 vs 799 轮）成立，但先验用的是同批任务，属样本内估计。</li>
+        <li><strong>组合臂从未起跑</strong>——把两种方法叠在一起跑的那条路径，账面上标记字段命中 <strong>0 行</strong>；本轮只是把它三个会静默失败的前提修掉了。</li>
+        <li><strong>覆盖缺口比统计缺口更值钱</strong>——81 个任务里 <strong>41 个从未执行</strong>。补配对数的正道是补覆盖，不是把不同语义的格子并池凑数。</li>
+        <li><strong>审计者自己的新数要用同一把尺复算</strong>——上一轮公开页审计抓到四处自己造成的错（假行数、过期断言数、漂移的提交数、误标的环境档位）。产出不是「删掉假数」就完事。</li>
+      </ul>
+      <div class="quote reveal" style="margin-top:30px">
+        <p>设施的价值不在它跑得多快，而在它出错时你能不能定位——然后把这一次定位，变成下一轮的守卫。</p>
+        <div class="who">范式无关的部分 · 适用于任何长任务系统</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="commands">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">Reproduce / 当场复算</div><h2>这一页的数字，四条命令重跑。</h2></div>
+        <p class="note">口径写清楚，比数字大更要紧。以下均为 2026-11-02 在 Apex-Agent 工作区 HEAD 上实测。</p>
+      </div>
+      <div class="facts reveal">
+        <div class="fact"><div class="v">1,211</div><div class="l">次提交 <code>git rev-list --count HEAD</code></div></div>
+        <div class="fact"><div class="v">258,283</div><div class="l">行 · 单遍求和 <code>git ls-files src tests scripts</code>（1,040 文件）</div></div>
+        <div class="fact"><div class="v">76</div><div class="l">条守卫清单（数组区间内取字符串字面量，跳过注释；重复 0、目标缺失 0）</div></div>
+        <div class="fact"><div class="v">206<span class="u">→</span>81</div><div class="l">台账行数 → 去重后格子数（两份台账合计）</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="grid">
+      <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者</div>
+      <div class="links"><a href="index.html">主页</a><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+    </div>
+    <div class="fine">数字不是结论，是口径。© 2026 梁迪臻</div>
+  </div>
+</footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});els.forEach(function(e){io.observe(e)});})();
+</script>
+</body>
+</html>

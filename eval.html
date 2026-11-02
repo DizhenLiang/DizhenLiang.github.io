@@ -21,6 +21,7 @@
       <a href="deploy.html">部署</a>
       <a href="optimize.html">优化</a>
       <a href="eval.html" class="active">评测</a>
+      <a href="lessons.html">心得</a>
       <a href="index.html#contact" class="cta">联系</a>
     </nav>
   </div>
@@ -34,8 +35,8 @@
         <h1>评测不是打分，<br>是把任务<span class="em">跑成产品</span>。</h1>
         <p class="lede">一条完整的评测链，从「生成一个任务」到「把失败变成下一轮的数据」，中间要过七道关。数据管线设施是这条链的骨架。</p>
         <div class="actions">
-          <a class="btn btn-primary" href="#pipeline">7 步流水线 →</a>
-          <a class="btn btn-ghost" href="#pipeline-infra">数据管线设施</a>
+          <a class="btn btn-primary" href="#scenario">按产品场景选范式 →</a>
+          <a class="btn btn-ghost" href="#pipeline">7 步流水线</a>
         </div>
       </div>
       <div class="trace" aria-hidden="true">
@@ -45,7 +46,7 @@
           <div class="trow"><span class="idx">02</span><span class="act">verify-plane</span><span class="detail">评测面不污染生产面自检</span><span class="st ok">done</span></div>
           <div class="trow"><span class="idx">03</span><span class="act">dataset</span><span class="detail">Harbor 契约 agent/env/verifier/reward</span><span class="st ok">done</span></div>
           <div class="trow now"><span class="idx">04</span><span class="act">run</span><span class="detail">DD · PP · DP · VM · CD（五范式）</span><span class="st run">running</span></div>
-          <div class="trow"><span class="idx">05</span><span class="act">metrics</span><span class="detail">批次 tag · fail-loud · 198 行台账</span><span class="st">queued</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">metrics</span><span class="detail">批次 tag · fail-loud · 206 行 → 81 格</span><span class="st">queued</span></div>
         </div>
         <div class="trace-foot"><span>step 04 / 07</span><span>◎ 失败即数据</span></div>
       </div>
@@ -59,7 +60,7 @@
         <p class="note">从任务到结论，每一步都有输入、输出、失败处理；任何一步不通过，都不会进入下一步。</p>
       </div>
       <div class="steps reveal">
-        <div class="step"><div class="sn">01</div><div><h4>任务生成与预注册</h4><p>把需求翻译成可执行任务，主终点、判据、批次口径先写进 <code>registration.json</code> 预注册——跑之前锁口径，跑完不能改口。结果逐行落 <code>results.jsonl</code>，当前实测 198 行。</p></div></div>
+        <div class="step"><div class="sn">01</div><div><h4>任务生成与预注册</h4><p>把需求翻译成可执行任务，主终点、判据、批次口径先写进 <code>registration.json</code> 预注册——跑之前锁口径，跑完不能改口。结果逐行落 <code>results.jsonl</code>：两份台账合计 <strong>206 行</strong>，按「任务 × 臂 × 批次」去重后是 <strong>81 个格子</strong>（重复率 154.3%，2026-11-02 复算）。数行不数格子，会得出「全有判分、零缺口」的错结论。</p></div></div>
         <div class="step"><div class="sn">02</div><div><h4>执行面自检</h4><p>先证明评测没污染生产：指标与 trace 打在独立批次 tag 上，生产面查询计数不因此增长（<code>verify-plane</code> 类自检）。先证明「没串味」，再谈「跑得对」。</p></div></div>
         <div class="step"><div class="sn">03</div><div><h4>数据集构建</h4><p>任务统一成 <strong>Harbor 契约</strong>：<code>agent → environment → verifier → reward.txt</code>，模式 <code>spawn</code> / <code>latest</code>（<code>harbor-eval-bridge.ts:11-12</code>）。数据集构建侧要求锚点可解析，<strong>找不到锚即 FAIL</strong>，不静默放行。</p></div></div>
         <div class="step"><div class="sn">04</div><div><h4>评测执行</h4><p>按 DD / PP / DP / VM / CD 五种<strong>方法范式</strong>各跑一遍。执行段是只读、限定 cwd、断网的 worktree 工具环（<code>paradigm-ab-eval-skeleton.ts:38</code>），刻意不触生产 workflow。</p></div></div>
@@ -81,8 +82,40 @@
         <div class="card"><div class="k">队列与写口</div><h3>apex-eval + 独立投影表</h3><p>评测走独立 task queue <code>apex-eval</code>，结果只经 <code>syncEvalResult</code> 单写口进独立投影表 <code>projection_eval_results</code>，PG 不可用即抛。<strong>边界</strong>：它与生产同 worker、同连接，是<strong>逻辑隔离</strong>，不是独立部署体。</p></div>
         <div class="card"><div class="k">指标与追踪</div><h3>推送 / 时序 / trace</h3><p>Pushgateway 推送、Prometheus 存时序、Langfuse 记 trace 与评分；指标带批次 tag，可按批次、任务、阶段下钻。<strong>边界</strong>：Grafana 面板退役仍在清单里未勾选，采集与查询层不受影响。</p></div>
         <div class="card"><div class="k">Eval Skeleton</div><h3>registration.json + analyze.mts</h3><p>新评测套同一套骨架：预注册（主终点、判据、批次口径）→ 运行 → <code>paradigm-ab-analyze.mts</code> 分析。跑之前把口径锁死，跑完不能改口。</p></div>
-        <div class="card"><div class="k">批次与台账</div><h3>批次 tag + fail-loud + 198 行</h3><p>每批一个唯一 tag，串起指标、trace 与台账；异常不静默，直接 fail-loud。结果台账 <code>results-v5-30s-fullredo.jsonl</code> 实测 198 行（10-28 报告写作 191，以文件为准）。</p></div>
+        <div class="card"><div class="k">批次与台账</div><h3>批次 tag + fail-loud + 行数≠格子数</h3><p>每批一个唯一 tag，串起指标、trace 与台账；异常不静默，直接 fail-loud。结果台账主文件实测 198 行（10-28 报告写作 191，以文件为准），加第二份合计 206 行 ⇒ 去重后 81 个格子。台账行<strong>没有运行标识列</strong>，实测 4 / 81 个格子的两次运行塌缩成同一行，被藏的早期分数找不回来——这是已立案的待修项，不是读数误差。</p></div>
         <div class="card"><div class="k">隔离边界</div><h3>只读工具环，不触生产</h3><p>评测执行只读、限定 cwd、断网，刻意不启动生产 workflow；执行侧的沙箱是 OpenSandbox 容器（gVisor / runsc）。代价是过程指标只能先走 proxy 口径，见下方 judge 一节。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="scenario">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">03 / Scenario</div><h2>按产品场景选方法范式，而不是反过来。</h2></div>
+        <p class="note">五种范式不是流水线阶段，是五种工程方法。下面每条都写清：适用场景、实测效应与<strong>是哪把尺量的</strong>（人工判分 / 机器判分）、成本、以及不该用的情形。全量池化的平均差只有 <strong>−0.015</strong>——不存在「注入了就更好」，收益是场景相关的。</p>
+      </div>
+      <div class="rows reveal">
+        <div class="row"><div class="rk">契约化交付<br>照清单实现</div><div class="rv"><strong>DP（设计方案引导编码）——唯一测出正效应。</strong>人工判分尺 meanΔ <strong>+0.153</strong>（7 对：4 胜 0 负 3 平）；剔除 6 个作废格子后升到 <strong>+0.214</strong>——也就是说 +0.153 已经是<strong>被占位 0 压低过的保守值</strong>（污染量 +0.061，方向对 DP 有利）。成本是正效应里最便宜的：<strong>+100,035</strong> tokens／对。<strong>但必须分尺陈述</strong>：同一批在机器判分尺上是 <strong>−0.167</strong>（6 对，0 胜 1 负 5 平），两把尺符号相反。履约面证据最硬：需求锚点 13/13、追溯表 13/17、交付落盘 17/17。<br><span class="mono">不该用：任务本身没有可核验清单——dp-015 / dp-016 就是缺设计方案的假前提，属任务集缺陷，不是范式失效。</span></div></div>
+        <div class="row"><div class="rk">质量强约束<br>测试先行</div><div class="rv"><strong>VM（W 模型）——当前不默认注入，值钱的是它的判定面。</strong>人工判分尺 meanΔ <strong>−0.007</strong>（7 对 2 胜 3 负 2 平），却最贵：<strong>+2,646,958</strong> tokens／对、轮次均值 137–140。更要紧的是<strong>机器判分尺恒 0.000</strong>（23 个格子全 0，7 对 0→0）⇒ 现有分数差 <strong>100% 来自人工判分</strong>。而它的判定资产其实已经到位：任务自带标准答案锚点 17/17，但追溯表 <strong>0/24</strong>、验收前置 <strong>4/17</strong>、测试落地 <strong>2/17</strong>——基准在位、没接线。<br><span class="mono">修法见下方「DP × W 模型是同类问题吗」；先修的是判定范围（把测试判定收窄到该格子的交付文件），不是提示词。</span></div></div>
+        <div class="row"><div class="rk">需求模糊<br>先定义问题</div><div class="rv"><strong>DD（双钻）——目前证据不支持默认注入。</strong>meanΔ <strong>−0.086</strong>（剔除后 −0.100，7 对 1 胜 5 负 1 平），成本 +247K tokens／对、轮次 25.1→28.7。它的注册终点 <code>problem_coverage</code>（问题空间是否被覆盖）只有人工判分尺，没有机器分可对照，也没有为它建判定基准——这是下一步该补的面，而不是它的失败证据。<br><span class="mono">早期 10-29 批次曾给出 +0.183 的反向信号，跨批不稳定 ⇒ 只当方向。</span></div></div>
+        <div class="row"><div class="rk">汇报文档<br>短产出</div><div class="rv"><strong>PP（金字塔）在短任务上是纯负担。</strong>meanΔ <strong>−0.100</strong>（6 对 2 胜 4 负，medianΔ −0.20），+152,614 tokens／对、轮次 25.8→30.8、双臂均值 0.775→0.675；单样本实测 pp-004：25 轮 → <strong>61 轮</strong>，分数反而下降。控制臂本来就不低（0.775），注入是把它拉下来的 ⇒ 短任务上范式是纯成本，不带来结果差异。<br><span class="mono">值得用的形态：多层论证的长文档。通用规则（高置信）：轮次中位数 &lt;30 的阶段直接单智能体直跑。</span></div></div>
+        <div class="row"><div class="rk">数据分析<br>口径与效度</div><div class="rv"><strong>CD（CRISP-DM）——唯一「注入后更省钱」的范式，效应中性。</strong>meanΔ <strong>−0.052</strong>（6 对 2 胜 3 负），成本 <strong>−1,402,761</strong> tokens／对（比对照臂更省），轮次 84.4 / 88.2。这一场景里真正的强信号不是方法，是<strong>有没有写下来</strong>：落盘样本均分 <strong>0.674</strong>，未落盘 <strong>0.050</strong>（<strong>13.5 倍</strong>）。<br><span class="mono">诚实边界：「CD 适合数据分析」在报告里没有直接推荐证据，只有阶段定义——省成本与中性效应是实测，适配性是推断。已知坑：3 个「跑完但没落盘」源自新旧交付契约错配，不是门失效；墙钟实测 37–50 分钟、超默认 25 分钟预算，存在「跑满交空」的前瞻风险。</span></div></div>
+        <div class="row"><div class="rk">路由</div><div class="rv">按复杂度自适应选型的路由实测：<strong>DP 走全角色拓扑、其余走单智能体</strong>，与上面的场景结论同向。但先验是用同批任务估的（样本内），且 <strong>96% 停在只记录不生效的影子模式</strong>，预估省 43%（454 vs 799 轮）不能当已实现收益。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="merge">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">03b / Merge</div><h2>「设计方案引导编码」和「W 模型」是同类问题吗？</h2></div>
+        <p class="note">成立的部分是机制同族，不成立的部分是任务同族。两种说法后果完全不同：一种会让实验作废，另一种只是把分数打回事实水平。</p>
+      </div>
+      <div class="cards reveal">
+        <div class="card"><div class="k">路线一 · 数据面并池</div><h3>不作默认</h3><p>把两者当同一家族配对，能换来的只是配对数 7+7→14；但两臂语义不同（一个是照外部契约履约，一个是自己立验收标准），并池后 +0.214 失去归因对象。而配对数不足的真因是 <strong>81 个任务里 41 个从未执行</strong>——补覆盖即可，不必凑数。</p></div>
+        <div class="card"><div class="k">路线二 · 提示词面合并</div><h3>禁止</h3><p>把设计方案文件喂给 W 模型臂，测到的就不再是「自带验证地实现」。前者优势恰恰来自「看不到验收契约、只能去履约」。<strong>外置的必须是判定基准（锚点／标准答案），不能是执行提示</strong>——喂进去就把它从判定基准降级成了执行提示。</p></div>
+        <div class="card"><div class="k">路线三 · 机制层合并</div><h3>推荐：合并点在判定面</h3><p>把「基准外置 + 机械可核 + 可 diff」三层照搬到 W 模型的<strong>判定面</strong>：它的锚点已 17/17 在位，缺的只是拿基准去判定（机器分恒 0.000、追溯表 0/24）。交付形态是组合臂（两种方法叠在同一次运行），作<strong>新增格子</strong>而不替换阶段键——历史 81 个格子的归因靠这个键存续。</p><div class="meta">成本按 W 模型记 · 前置：先落机器分出处字段与两尺分列，否则它从约 0.39 掉到 0.000 会被读成「改造失败」</div></div>
+        <div class="card"><div class="k">本轮扫清的三个静默失败前提</div><h3>否则组合臂会自己把分数打成 0</h3><p><strong>①</strong> 相位写权按单个阶段算白名单 ⇒ 组合运行里另一种方法的合法交付物被拒收；已改成按组合阶段求并集。<strong>②</strong> 组合标记从不写进台账 ⇒ 组合格子与单范式格子在账面上完全同形（现役台账命中 <strong>0 行</strong>）；已补。<strong>③</strong> 两套相位要求同时下发 ⇒ 失败时同时有两套解释；裁决规则写死：外部契约存在时以需求点清单为准，另一方只补测试线。</p></div>
       </div>
     </div>
   </section>
@@ -90,14 +123,14 @@
   <section class="section" id="rubric">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">03 / Rubric</div><h2>五种方法范式，各自一个注册终点。</h2></div>
-        <p class="note">DD / PP / DP / VM / CD 不是流水线阶段，而是五种<strong>工程方法范式</strong>（<code>paradigms.ts:10-15</code>）。每个范式只对它注册的终点打分，口径写在 <code>registration.json</code> 里，跑之前锁死。</p>
+        <div><div class="overline">03c / Registered Endpoints</div><h2>注册终点原样：每个范式只对它注册的终点打分。</h2></div>
+        <p class="note">口径写在 <code>registration.json</code> 里，跑之前锁死、跑完不能改口（<code>paradigms.ts:10-15</code>）。这一节保留终点定义，供上面每条场景结论对照。</p>
       </div>
       <div class="rows reveal">
         <div class="row"><div class="rk">DD 双钻</div><div class="rv"><code>problem_coverage</code>：问题空间是否被覆盖——需求里每个问题点有无对应实现、边界条件有没有做到。</div></div>
         <div class="row"><div class="rk">PP 金字塔</div><div class="rv"><code>plan_coverage</code>：计划与结构是否覆盖。「结论先行」是它的子判据之一，不是注册终点——注册口径是 <code>plan_coverage</code>，比单独讲「结论前置」宽。</div></div>
-        <div class="row"><div class="rk">DP 设计方案引导编码</div><div class="rv"><code>requirement_coverage</code>：任务描述里的每一条需求是否被满足，逐条核，不靠「整体感觉」。这是当前唯一测出稳定正效应的范式（+0.17，跨 judge 稳健）。</div></div>
-        <div class="row"><div class="rk">VM W 模型</div><div class="rv"><code>skips + rework</code>：跳了几步、返工几次。<strong>口径注意</strong>：注册终点里没有「测试覆盖率」；且当前这两个指标是 executor 统计的 <strong>proxy 口径</strong>，不是 Temporal History 真值。</div></div>
+        <div class="row"><div class="rk">DP 设计方案引导编码</div><div class="rv"><code>requirement_coverage</code>：任务描述里的每一条需求是否被满足，逐条核，不靠「整体感觉」。当前唯一测出正效应的范式——人工判分尺 +0.153（剔除后 +0.214），同一批在机器判分尺上是 −0.167，<strong>两把尺符号相反，必须分开陈述</strong>（见上方场景一）。</div></div>
+        <div class="row"><div class="rk">VM W 模型</div><div class="rv"><code>skips + rework</code>：跳了几步、返工几次。<strong>两处口径注意</strong>：注册终点里没有「测试覆盖率」；且当前这两个指标是 executor 统计的 <strong>proxy 口径</strong>，不是工作流历史真值。它的机器判分尺恒 0.000，所以账面分数差全部来自人工判分。</div></div>
         <div class="row"><div class="rk">CD CRISP-DM</div><div class="rv"><code>analysis_validity</code>：分析过程是否成立。数据泄漏与可复现是它的子判据，不是它的全部——打分打的是有效性整体，两条子判据各自还有守卫。</div></div>
       </div>
     </div>
@@ -141,14 +174,16 @@
         <p class="note">每个数都注明它数的是什么、以及样本量够不够下结论。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹</div></div>
-        <div class="fact"><div class="v">198</div><div class="l">行结果台账（实测行数）</div></div>
-        <div class="fact"><div class="v">26</div><div class="l">项 judge 完整性守卫</div></div>
-        <div class="fact"><div class="v">4<span class="u">/</span>12</div><div class="l">首跑假收敛（教训来源）</div></div>
+        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹（台账 206 行 → 去重 81 格）</div></div>
+        <div class="fact"><div class="v">33<span class="u">/</span>60</div><div class="l">有效配对对数 / 预注册门槛（不足，只报方向）</div></div>
+        <div class="fact"><div class="v">26</div><div class="l">项 judge 完整性守卫（<code>paradigm-ab-judge-integrity</code>）</div></div>
+        <div class="fact"><div class="v">41</div><div class="l">个任务从未执行——配对数不足的唯一根因</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">实测结论</div><div class="rv">DP（设计方案引导编码）是当前唯一测出稳定正效应的范式，配对差 +0.17 且跨 judge 稳健；VM（W 模型）成本最高而无可见增量。<strong>但每个范式只有 6–12 对配对样本</strong>——这是方向性信号，不是可推广结论。</div></div>
-        <div class="row"><div class="rk">口径注意</div><div class="rv">跳步 / rework 现在是 proxy 口径；把它们变成 Temporal History 真值的改造方案已写好（PR E0–E3），尚未落地。这一页把它列成待办，而不是成果。</div></div>
+        <div class="row"><div class="rk">实测结论</div><div class="rv">收益是<strong>场景相关</strong>的，不是「注入就更好」：全量池化平均差 <strong>−0.015</strong>；DP 在契约化交付上 +0.153（剔除 6 个作废格子后升到 +0.214，污染量 +0.061 且方向对 DP 有利，所以 +0.153 是保守值；它同时是最便宜的正效应 +100,035 tokens／对）；VM 平均 −0.007 却最贵（+2,646,958 tokens／对）、机器分尺恒 0.000；PP 与 DD 在短任务／探索任务上均为负。<strong>但每个范式只有 6–7 对配对样本</strong>——这是方向性信号，不是可推广结论。</div></div>
+        <div class="row"><div class="rk">两把尺</div><div class="rv">人工判分与机器判分必须分列陈述：DP 上两把尺符号相反（+0.153 vs −0.167）；机器分的<strong>可追认性只有 57.4%</strong>（112 行里 48 行对不上任何一代机器分文件），所以「切到机器分」这件事本身要先补出处字段。</div></div>
+        <div class="row"><div class="rk">口径注意</div><div class="rv">跳步 / rework 现在是 proxy 口径；把它们变成工作流历史真值的改造方案已写好（PR E0–E3），尚未落地。这一页把它列成待办，而不是成果。</div></div>
+        <div class="row"><div class="rk">统计纪律</div><div class="rv">门槛在开跑前锁定：α=0.05、功效 0.8、最小效应 d=0.5 ⇒ 约 <strong>60 对</strong>；实测剔除率约 50%，所以留了余量。五个阶段同时检验不校正，「至少撞上一次显著」的概率约 23% ⇒ 用 Holm。详见 <a href="lessons.html#stats" style="color:var(--accent)">心得页第 05 节</a>。</div></div>
       </div>
     </div>
   </section>
@@ -158,7 +193,7 @@
   <div class="wrap">
     <div class="grid">
       <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者</div>
-      <div class="links"><a href="index.html">主页</a><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+      <div class="links"><a href="index.html">主页</a><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="lessons.html">心得</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
     </div>
     <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
   </div>

@@ -21,6 +21,7 @@
       <a href="deploy.html">部署</a>
       <a href="optimize.html">优化</a>
       <a href="eval.html">评测</a>
+      <a href="lessons.html">心得</a>
       <a href="#contact" class="cta">联系</a>
     </nav>
   </div>
@@ -56,7 +57,7 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div><div class="overline">The Facility / 整套设施</div><h2>不是一套代码，是一台机器。</h2></div>
-        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、沙箱执行、执行权威、评测与数据回流咬合成一个可自我改进的飞轮。下面四条都能在源码里指到位置。</p>
+        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、沙箱执行、执行权威、评测与数据回流咬合成一个可自我改进的飞轮。下面五张卡都能在源码里指到位置。</p>
       </div>
       <div class="cards reveal">
         <div class="card">
@@ -74,7 +75,7 @@
         <div class="card">
           <div class="k">03 / 兜底与巡检</div>
           <h3>重放 · 幂等 · 巡检 · 熔断</h3>
-          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 70 条 <code>test:guards</code>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数）把「静默错误」提前暴露。</p>
+          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 76 条 <code>test:guards</code>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数）把「静默错误」提前暴露。</p>
           <div class="meta">看板熔断默认连续 2 次 · <code>test:fault-injection</code> 串跑 5 个测试</div>
         </div>
         <div class="card">
@@ -90,8 +91,8 @@
   <section class="section" id="branches">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">Branches / 四条分支</div><h2>顺着设施的四个侧面往里看。</h2></div>
-        <p class="note">同一台机器，四条独立的叙事线：生产设施、部署流程、优化方案、评测全流程。每条里的机制都标了源码位置，可以当场追问。</p>
+        <div><div class="overline">Branches / 五条分支</div><h2>顺着设施的五个侧面往里看。</h2></div>
+        <p class="note">同一台机器，五条独立的叙事线：生产设施、部署流程、优化方案、评测全流程、实操心得。前四条里的机制都标了源码位置，可以当场追问；第五条只收与「用哪种方法」无关的经验，每条都能复算或已经变成一条会变红的守卫。</p>
       </div>
       <div class="branches reveal">
         <a class="branch" href="production.html">
@@ -116,7 +117,13 @@
           <div class="top"><span class="num">04 / EVALUATION</span><span class="arrow">→</span></div>
           <h3>数据管线 → 产品评测全流程</h3>
           <p>评测不是打分，是把任务跑成产品：7 步流水线、数据管线设施、五种方法范式 rubric、评判准确性守卫，以及 proxy 与真值的口径差别。</p>
-          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">五范式 rubric</span><span class="tag">评判准确性</span></div>
+          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">按产品场景选范式</span><span class="tag">评判准确性</span></div>
+        </a>
+        <a class="branch wide" href="lessons.html">
+          <div class="top"><span class="num">05 / LESSONS</span><span class="arrow">→</span></div>
+          <h3>实操经验与心得 · 范式无关</h3>
+          <p>换任何方法、换任何项目都成立的那部分：计数三固定、台账就地覆写的现场实证、守卫自己也要被改坏一次、结构强制优于提示词祈祷、门槛预注册、调用方计数取证法。</p>
+          <div class="tags"><span class="tag">可复算</span><span class="tag">断言要能变红</span><span class="tag">口径 &gt; 数值</span><span class="tag">诚实边界</span></div>
         </a>
       </div>
     </div>
@@ -129,14 +136,16 @@
         <p class="note">四个数都能在仓库里复算，并写清各自口径：哪些是提交量、哪些是行数、哪些是评测轨迹。口径写清楚，比数字大更要紧。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,206</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-01）</div></div>
-        <div class="fact"><div class="v">256,493</div><div class="l">行自研代码（src+tests+scripts，1,038 个文件）</div></div>
-        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹</div></div>
-        <div class="fact"><div class="v">70</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
+        <div class="fact"><div class="v">1,211</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-02 复算）</div></div>
+        <div class="fact"><div class="v">258,283</div><div class="l">行自研代码（src+tests+scripts，1,040 个文件，单遍求和）</div></div>
+        <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹（台账去重后 81 个格子）</div></div>
+        <div class="fact"><div class="v">76</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">口径</div><div class="rv">1,206 是提交数不是任务数；真实跑过的唯一任务 38 个。256,493 是代码行数，不是测试执行次数（测试文件 309 个，<code>it()</code>/<code>test()</code> 用例全仓 2,287 条、<code>tests/</code> 目录 548 条）。行数必须单遍求和：用 <code>xargs wc -l | tail -1</code> 会因参数被拆成多段而只数到最后一批，同一范围实测只剩 71,506——数字没核对过求和方式，就等于没核对过。</div></div>
-        <div class="row"><div class="rk">未落地</div><div class="rv">范式动态路由与 Temporal 评测面真值口径仍在验证阶段；rework / 跳步当前是 proxy 口径。跨 judge 漂移实测：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
+        <div class="row"><div class="rk">口径</div><div class="rv">1,211 是提交数不是任务数，真实跑过的唯一任务 38 个。258,283 是代码行数，不是测试执行次数：git 跟踪的测试文件 <strong>162</strong> 个（<code>*.test.ts/.tsx/.mts</code>），用例声明 990 条。行数必须单遍求和——用 <code>xargs wc -l | tail -1</code> 会因参数被拆成多段而只数到最后一批，同一范围实测只剩 71,506；数字没核对过求和方式，就等于没核对过。</div></div>
+        <div class="row"><div class="rk">行数≠格子数</div><div class="rv">两份结果台账合计 <strong>206 行</strong>，按「任务 × 臂 × 批次」去重后只有 <strong>81 个格子</strong>，重复率 154.3%。10-30 那份「76/76 全有判分、零缺口」的结论，就是数了行、宣布了格子、中间漏了去重。台账还没有运行标识列，实测 4 / 81 个格子的两次运行塌缩成一行。</div></div>
+        <div class="row"><div class="rk">本轮新增</div><div class="rv">2026-11-02 把两条分工写成了代码与守卫：提示词装配顺序固定为<strong>角色段 → 任务正文 → 上游输入</strong>，以及相位写权——计划与审查角色<strong>不能改动执行者的交付本体</strong>，缺陷以 <code>REWORK</code> 行回流。29 项检查跑绿，并用 8 种改坏证明它真的会变红。</div></div>
+        <div class="row"><div class="rk">未落地</div><div class="rv">81 个任务里 <strong>41 个从未执行</strong>，这是配对数不足的唯一根因；组合范式臂（把两种方法叠在同一次运行）至今 <strong>0 行</strong>入账，本轮只修掉了它三个会静默失败的前提；跳步 / 返工仍是执行段自报的 proxy 口径；动态路由 96% 停在只记录不生效的影子模式。跨 judge 漂移实测：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。</div></div>
       </div>
     </div>
   </section>
@@ -160,7 +169,7 @@
   <div class="wrap">
     <div class="grid">
       <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者 · 一个人，一套设施</div>
-      <div class="links"><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+      <div class="links"><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="lessons.html">心得</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
     </div>
     <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
   </div>
