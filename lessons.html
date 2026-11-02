@@ -143,7 +143,7 @@
         <div class="card"><div class="k">历史读数</div><h3>先查它的取证日期，再决定能不能用来定价</h3><p>注释里「同一份文件被重读 4–14 遍」出自 2026-10-09 的轨迹取证，而截断与白回放两处缺陷 10-14 就修了——那串数字<strong>不能拿来给今天的设施定成本</strong>。本批全量台账里，死于复读型停止的格子集中在控制臂，不在方法注入臂。</p></div>
         <div class="card"><div class="k">探针自错</div><h3>工具会静默告诉你「没有」</h3><p>踩过四类：Windows 下内联脚本经 <code>cmd.exe</code> 执行导致检索类探针<strong>静默假阴性</strong>；追踪服务的列表接口上限 100，传 1000 会<strong>返回空数组而不是报错</strong>；目录联接递归删会穿透到真实源码树；MSYS 会把 <code>/run</code> 这类参数改写成盘符路径。</p><div class="meta">每个探针都要带一个阳性对照，否则「查不到」无法区分「不存在」与「查错了」</div></div>
         <div class="card"><div class="k">外置什么</div><h3>判定基准可以外置，执行提示不行</h3><p>把验收契约写进独立文件、让版本历史可 diff，是被验证有效的做法（设计方案文件 14 份全部被 git 跟踪且与盘上一致）。但把它喂给模型当输入，就<strong>把判定基准降级成了执行提示</strong>——测出来的不再是「履约能力」。</p></div>
-        <div class="card wide"><div class="k">今天的现场案例</div><h3>「已注册 + 有分发点」仍不等于「在生产跑」</h3><p>被问「三段式编排进生产了吗」，三桶计数给出的答案不是是或否：<code>apexPlanExecuteReview</code> 在 <code>src/</code> 有 workflow、有 worker 注册、有两个 API 分发点，但两个分发点各要一个请求字段（<code>framework:"plan"</code> / <code>executionMode:"orchestration"</code>），而实测发出方：前者全仓 <strong>0 处</strong>（src / scripts / tests 都数过），后者唯一的前端调用打在需要另一个字段的 run 接口上 ⇒ <strong>线上零流量</strong>；planner→executor→reviewer 的三角色拓扑 <code>src/</code> 调用数为 <strong>0</strong>，只在 <code>scripts/</code>；范式引擎的 <code>registry.json</code> 确实已提交入库，总开关却是 <code>config.yaml:200</code> 的 <code>enabled: false</code>。</p><div class="meta">补第四问：谁真的发出了那个触发字段——分发点存在 ≠ 有请求方走它</div></div>
+        <div class="card wide"><div class="k">今天的现场案例（含它的后半段）</div><h3>「已注册 + 有分发点」仍不等于「在生产跑」——但数出来之后还有下一步</h3><p>被问「三段式编排进生产了吗」，三桶计数 + 第四问给出的答案不是是或否，而是<strong>修复位置</strong>：<code>apexPlanExecuteReview</code> 在 <code>src/</code> 有 workflow、有 worker 注册、有两个 API 分发点，但两个分发点各要一个请求字段（<code>framework:"plan"</code> / <code>executionMode:"orchestration"</code>），实测发出方为 0 ⇒ 缺的不是实现，是<strong>发出触发字段的那一方</strong>。于是补的就是那一方：一条零大模型的纯函数路由当发出者，缺省不再写死回落单循环，请求信号决定 SOLO（单循环）还是 FULL_TOPOLOGY（planner/reviewer 座位启动），判定连理由逐条留痕，回退只要一个环境变量。落地当天两个真实请求体把两条臂都跑了出来，Temporal 历史里可查。<strong>同一天另一份取证又把这条分流的定价打了回来</strong>：路由判 FULL_TOPOLOGY 引用的「+0.17」在现台账复算不出（实为 +0.083、精确置换 p=0.625；旧数出自一份已不在仓库里的批次报告），而代价是实测的 +71% prompt token ⇒ 引用作废、注释改回可复算的数。<strong>教训两层</strong>：数出「缺发出方」只是开头；把发出方补上以后，还要拿它自己引用的数字反查自己。</p><div class="meta">补第四问：谁真的发出了那个触发字段——分发点存在 ≠ 有请求方走它</div></div>
       </div>
     </div>
   </section>
@@ -155,9 +155,9 @@
         <p class="note">每一页都带源码位置和一份「没做到」清单。写清局限的成本远低于被追问出来。</p>
       </div>
       <ul class="list reveal">
-        <li><strong>「代码在 src 里」和「在生产跑」是两件事</strong>——线上实跑 <code>apexAgentLoop</code>；三段式 Plan-Execute-Review 接线齐备但零流量，三角色写权拓扑只在评测 harness，范式引擎总开关默认关。这一页不用它们讲成「生产已经在用」。</li>
+        <li><strong>「代码在 src 里」和「在生产跑」是两件事</strong>——线上实跑的是路由判 SOLO 时的 <code>apexAgentLoop</code>；三段式 Plan-Execute-Review 自 2026-11-02 起由入口路由决定要不要启动 planner/reviewer 座位（两条臂都有真实请求跑通、Temporal 历史可查），但它所引用的评测效应回台账复算没到显著性（+0.083，p=0.625）⇒「在跑」不等于「跑赢」；三角色的<strong>写权</strong>拓扑仍只在评测 harness；范式引擎总开关默认关。这一页不用它们讲成「生产已经在用某种方法并因此变好了」。</li>
         <li><strong>跳步与返工仍是 proxy 口径</strong>——由执行段自己统计，还没接成工作流历史真值；改造方案已写好，未落地，所以列成待办而不是成果。</li>
-        <li><strong>动态路由 96% 是影子模式</strong>——只记录不生效；预估省 43%（454 vs 799 轮）成立，但先验用的是同批任务，属样本内估计。</li>
+        <li><strong>两条路由别混成一条</strong>——评测面那条（<code>scripts/paradigm-ab-router.ts</code>）仍是<strong>影子模式</strong>：只记录不生效，96% 任务走全拓扑，预估省 43%（454 vs 799 轮）不能当已实现收益；生产入口这条（<code>lib/paradigm/topology-router.ts</code>）2026-11-02 起默认生效，但它管的是「单循环 vs 三段式」，不管范式注入。先验都用的是同批任务，属样本内估计。</li>
         <li><strong>组合臂从未起跑</strong>——把两种方法叠在一起跑的那条路径，账面上标记字段命中 <strong>0 行</strong>；本轮只是把它三个会静默失败的前提修掉了。</li>
         <li><strong>覆盖缺口比统计缺口更值钱</strong>——81 个任务里 <strong>41 个从未执行</strong>。补配对数的正道是补覆盖，不是把不同语义的格子并池凑数。</li>
         <li><strong>审计者自己的新数要用同一把尺复算</strong>——上一轮公开页审计抓到四处自己造成的错（假行数、过期断言数、漂移的提交数、误标的环境档位）。产出不是「删掉假数」就完事。</li>
