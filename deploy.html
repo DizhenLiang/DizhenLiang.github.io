@@ -53,6 +53,14 @@
     </div>
   </section>
 
+  <div class="wrap">
+    <aside class="thread">
+      <span class="tk">Act II · 落地面</span>
+      <p class="tp">执行权威不会自己站起来。这一页写的是把它起起来的七步，其中几步现在还靠我的手——我把靠人的地方逐个列出来，而不是写成一句「一键部署」。第三幕里最险的那次抓包就在这条线上：<strong>:7233 在听，我据此以为栈是活的；判活脚本给我的是 pollers=0（零个取活线程），而 worker 的构建自某个提交起一直是坏的。</strong></p>
+      <a class="tback" href="index.html#story">← 回到四幕</a>
+    </aside>
+  </div>
+
   <section class="section" id="pipeline">
     <div class="wrap">
       <div class="section-head reveal">
@@ -64,10 +72,19 @@
         <div class="step"><div class="sn">02</div><div><h4>依赖安装</h4><p><code>package-lock.json</code> + <code>npm ci</code>（<code>Dockerfile:71</code> 与 CI 都强制），禁止隐式升级。<strong>已知短板</strong>：Python 侧只有未锁版本的 <code>requirements.txt</code>。</p></div></div>
         <div class="step"><div class="sn">03</div><div><h4>外部服务分层拉起</h4><p><code>docker-compose.yml</code> 起 PostgreSQL / Redis / Temporal / 观测栈；<code>deploy/compose.yaml</code>、<code>compose.dev.yaml</code>、<code>compose.integration.yaml</code> 分档；k8s 清单在 <code>deploy/k8s/agent.yaml</code>。</p></div></div>
         <div class="step"><div class="sn">04</div><div><h4>应用与 worker 启动</h4><p><code>next dev</code>(:3000) 与 Temporal worker 同进程 co-located。<strong>Windows 已知坑</strong>：冷重启后 Turbopack 持久缓存会被毒化成瞬时 404，靠 touch-a-route 恢复；<code>dev:stop</code> 曾静默 no-op——这类环境性失败我单独归类，不冤枉代码。</p></div></div>
-        <div class="step"><div class="sn">05</div><div><h4>启动自报</h4><p>worker 存在性探针（可 fail-closed，<code>src/instrumentation.ts:56-80</code>）+ <code>/api/apex/metrics</code> Prometheus 端点 + compose healthcheck 探 workspace 路由。<strong>注意</strong>：仓内没有 <code>/api/health</code> 端点，healthcheck 探的是 workspace 路由。</p></div></div>
+        <div class="step"><div class="sn">05</div><div><h4>启动自报</h4><p>worker 存在性探针（可 fail-closed，<code>src/instrumentation.ts:56-80</code>）+ <code>/api/apex/metrics</code> Prometheus 端点 + compose healthcheck 探 workspace 路由。<strong>注意</strong>：仓内没有 <code>/api/health</code> 端点，healthcheck 探的是 workspace 路由。<strong>判活只认一样东西：每张必需任务队列上有没有取活线程（pollers）</strong>——端口在听不算，这条是踩过之后写死的（见下方抽屉）。</p></div></div>
         <div class="step"><div class="sn">06</div><div><h4>分链路验证</h4><p><code>e2e-agent-mode.mjs</code>（真工具调用 + 落盘断言）、<code>verify-chat-stream-e2e.ts</code>、<code>smoke-trust-routing.ts</code>，评测侧再跑执行面自检。<strong>诚实边界</strong>：没有一条覆盖「沙箱 + 结果 + 指标 + 异常」的统一上线冒烟，<code>package.json</code> 里也没有 smoke 入口。</p></div></div>
         <div class="step"><div class="sn">07</div><div><h4>灰度与回退</h4><p>回退靠 env 旗标切换实现路径（如 <code>KAFKA_ENABLED</code>、L1 legacy ↔ jev-node），runbook 见 <code>docs/g4-jevnode-gray-runbook.md</code> §5。<strong>诚实边界</strong>：没有一键回滚，也没保留上一版镜像（本地 build、无 registry tag），k8s 是 <code>Recreate</code> 策略。</p></div></div>
       </div>
+      <details class="evi">
+        <summary>证据 · 判活口径，和它抓到我的一次（2026-11-03）</summary>
+        <div class="evi-body">
+          <p><strong>口径</strong>：<code>scripts/check-temporal-workers.ts</code> 调 <code>probeWorkerPresence()</code>（<code>src/lib/temporal/worker-presence.ts</code>），必需队列两张：<code>apex-orchestrator</code> 与 <code>apex-side-effects</code>；任一队列 <code>pollers=0</code> 或连不上服务端 ⇒ 退出码 1。<code>:7233</code> 在听<strong>不是</strong>活着——那只能证明有东西占着端口。同一次探针还会报 <code>DUPLICATE WORKER</code>（一张队列上多个 poller）。</p>
+          <p><strong>现场</strong>：判活给出 <span class="n">pollers=0</span> ⇒ workflow 全在静默排队等超时，而我此前的判断依据是「端口在听」。往下查是一个真断：<code>src/lib/temporal/workflows/agentLoop.ts:35</code> 引了 <code>../../agent-harness/final-gate</code>，从源码根看落在 <code>src/lib/agent-harness</code>；打包时 outbase（打包基准目录）把树重基到 <code>dist/temporal-lib/workflows</code>，同一个 <code>../../</code> 就落到 <code>dist/agent-harness</code>——一个<strong>从来没被创建的目录</strong>。于是 worker 构建自引入提交 <code>a186bb16</code> 起一直是坏的，而这条断点不影响 <code>tsc</code>，只影响打包。</p>
+          <p><strong>修法</strong>：只动 build 脚本，<code>scripts/build-temporal-worker.mjs</code> 增加把 <code>src/lib/agent-harness</code> 复制进 <code>dist/agent-harness</code>（<span class="n">+9 行</span>，提交 <code>e62ed56c</code>，2026-11-03）。可行性先取证：被引的两个模块自身<strong>零 import</strong>（纯函数），且全仓 workflow 越出子树的 import <strong>只有这一条</strong> ⇒ 补一个目录是完备解。复验：worker 侧 <code>webpack compiled successfully</code>，同一道门从 <span class="n">pollers=0</span> 变 <span class="n">pollers=1, pollers=1</span>。</p>
+          <p><strong>由此定下的两步顺序</strong>：改 workflow 或 activity ⇒ 先 <code>build-temporal-worker</code> 重建 bundle，再重启 worker 进程；缺第二步，改动不吃进运行中的进程。dev 侧 <code>tsx</code> 直跑源码，重起即生效；容器化 worker 必须重建。</p>
+        </div>
+      </details>
     </div>
   </section>
 

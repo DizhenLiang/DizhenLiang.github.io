@@ -53,6 +53,14 @@
     </div>
   </section>
 
+  <div class="wrap">
+    <aside class="thread">
+      <span class="tk">Act IV · 未竟</span>
+      <p class="tp">心得不是胜利清单。这一页收的全是付过学费的那几条：怎么数数、怎么把「机制上线」和「证据达标」分成两件事、怎么让守卫自己也会变红，以及到现在仍然没做完的部分。<strong>第四幕没有结局，只有一张还在变短的未竟清单。</strong></p>
+      <a class="tback" href="index.html#story">← 回到四幕</a>
+    </aside>
+  </div>
+
   <section class="section" id="counting">
     <div class="wrap">
       <div class="section-head reveal">
@@ -143,7 +151,16 @@
         <div class="card"><div class="k">历史读数</div><h3>先查它的取证日期，再决定能不能用来定价</h3><p>注释里「同一份文件被重读 4–14 遍」出自 2026-10-09 的轨迹取证，而截断与白回放两处缺陷 10-14 就修了——那串数字<strong>不能拿来给今天的设施定成本</strong>。本批全量台账里，死于复读型停止的格子集中在控制臂，不在方法注入臂。</p></div>
         <div class="card"><div class="k">探针自错</div><h3>工具会静默告诉你「没有」</h3><p>踩过四类：Windows 下内联脚本经 <code>cmd.exe</code> 执行导致检索类探针<strong>静默假阴性</strong>；追踪服务的列表接口上限 100，传 1000 会<strong>返回空数组而不是报错</strong>；目录联接递归删会穿透到真实源码树；MSYS 会把 <code>/run</code> 这类参数改写成盘符路径。</p><div class="meta">每个探针都要带一个阳性对照，否则「查不到」无法区分「不存在」与「查错了」</div></div>
         <div class="card"><div class="k">外置什么</div><h3>判定基准可以外置，执行提示不行</h3><p>把验收契约写进独立文件、让版本历史可 diff，是被验证有效的做法（设计方案文件 14 份全部被 git 跟踪且与盘上一致）。但把它喂给模型当输入，就<strong>把判定基准降级成了执行提示</strong>——测出来的不再是「履约能力」。</p></div>
-        <div class="card wide"><div class="k">今天的现场案例（含它的后半段）</div><h3>「已注册 + 有分发点」仍不等于「在生产跑」——但数出来之后还有下一步</h3><p>被问「三段式编排进生产了吗」，三桶计数 + 第四问给出的答案不是是或否，而是<strong>修复位置</strong>：<code>apexPlanExecuteReview</code> 在 <code>src/</code> 有 workflow、有 worker 注册、有两个 API 分发点，但两个分发点各要一个请求字段（<code>framework:"plan"</code> / <code>executionMode:"orchestration"</code>），实测发出方为 0 ⇒ 缺的不是实现，是<strong>发出触发字段的那一方</strong>。于是补的就是那一方：一条零大模型的纯函数路由当发出者，缺省不再写死回落单循环，请求信号决定 SOLO（单循环）还是 FULL_TOPOLOGY（planner/reviewer 座位启动），判定连理由逐条留痕，回退只要一个环境变量。落地当天两个真实请求体把两条臂都跑了出来，Temporal 历史里可查。<strong>同一天另一份取证又把这条分流的定价打了回来</strong>：路由判 FULL_TOPOLOGY 引用的「+0.17」在现台账复算不出（实为 +0.083、精确置换 p=0.625；旧数出自一份已不在仓库里的批次报告），而代价是实测的 +71% prompt token ⇒ 引用作废、注释改回可复算的数。<strong>教训两层</strong>：数出「缺发出方」只是开头；把发出方补上以后，还要拿它自己引用的数字反查自己。</p><div class="meta">补第四问：谁真的发出了那个触发字段——分发点存在 ≠ 有请求方走它</div></div>
+        <div class="card wide"><div class="k">今天的现场案例（含它的后半段）</div><h3>「已注册 + 有分发点」仍不等于「在生产跑」——但数出来之后还有下一步</h3><p>被问「三段式编排进生产了吗」，三桶计数加上第四问给出的答案不是是或否，而是一个<strong>修复位置</strong>：workflow 在 <code>src/</code> 里有、worker 注册了、API 分发点有两个，缺的是<strong>发出触发字段的那一方</strong>。于是补的就是那一方——一条零大模型参与的纯函数路由当发出者，缺省不再写死回落单循环，请求信号决定走单循环还是全拓扑，判定连理由逐条留痕，回退只要一个环境变量。</p><p>落地当天，两个真实请求体把两条臂都跑了出来，Temporal 历史里可查。<strong>同一天，另一份取证把这条分流的定价打了回来</strong>：它对外引用的收益数字在现台账复算不出，而代价却是实测的 ⇒ 引用作废，代码注释和对外文案一起改回可复算的数。</p><p>教训有两层：数出「缺发出方」只是开头；把发出方补上以后，<em>还要拿它自己引用的数字反查自己</em>。</p>
+          <details class="evi">
+            <summary>证据 · 缺的是哪个字段、复算差在哪</summary>
+            <div class="evi-body">
+              <p><strong>缺的发出方</strong>：两个分发点各要一个请求字段——<code>framework:"plan"</code>（选哪条编排）与 <code>executionMode:"orchestration"</code>（走编排而非单循环），实测三个桶（<code>src</code>／<code>scripts</code>／<code>tests</code>）发出方均为 <span class="n">0</span>。</p>
+              <p><strong>定价被打回</strong>：路由判 FULL_TOPOLOGY 时引用的「+0.17」出自一份<strong>已不在仓库里</strong>的批次报告；用现台账独立复算是 <span class="n">+0.083</span>、精确置换 <span class="n">p=0.625</span>（6 对配对），未过大显著性；代价侧实测 prompt token <span class="n">+71%</span>。</p>
+            </div>
+          </details>
+          <div class="meta">补第四问：谁真的发出了那个触发字段——分发点存在 ≠ 有请求方走它</div>
+        </div>
       </div>
     </div>
   </section>

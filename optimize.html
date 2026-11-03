@@ -53,6 +53,14 @@
     </div>
   </section>
 
+  <div class="wrap">
+    <aside class="thread">
+      <span class="tk">Act III 之后 · 把代价算清楚</span>
+      <p class="tp">抓到自己数错之后，第一件事不是接着优化，是把「贵在哪」重新算一遍。这一页量的是结构性的贵——建工作区、常驻空闲运行时、每次访问穿一层容器——每个毫秒都在本机复算过，也每个数都带着限制它成立的边界。<strong>把离线实测的倍数写成线上已兑现的收益，是我不做的事。</strong></p>
+      <a class="tback" href="index.html#story">← 回到四幕</a>
+    </aside>
+  </div>
+
   <section class="section" id="control">
     <div class="wrap">
       <div class="section-head reveal">
@@ -91,7 +99,16 @@
       <div class="cards reveal">
         <div class="card"><div class="k">缓存</div><h3>工具结果按参数指纹复用</h3><p>缓存键 <code>tool:${toolName}:${argsHash}</code> + TTL（<code>harness-postgres.ts:576,659</code>），另有命中率指标（<code>production-metrics.ts:151</code>）。<strong>已知短板</strong>：缓存键没有版本位，schema 变更后旧结果可能被复用——记在待办里，不是已解决。</p></div>
         <div class="card"><div class="k">批处理</div><h3>真实生效的只有两处</h3><p>embedding 批量池化（<code>embed-pool.ts:58</code>、<code>fastembed-service.ts:237-287</code>）与 ES <code>_bulk</code> 200 条/批（<code>elasticsearch-client.ts:210</code>）。<strong>边界</strong>：LLM 侧「同质小请求合批」没有实现，只有上面这两条路径真在批处理。</p></div>
-        <div class="card"><div class="k">模型分层</div><h3>三张座位各配各的模型，缺省仍是同一个</h3><p>真实机制是<strong>角色化模型槽</strong>与 fallback 链（<code>model-orchestration.ts:78-84</code>），小模型只用在检索改写等辅助槽。<strong>2026-11-03 更正我上一版的口径</strong>：座位模型已由两张扩到三张——<code>APEX_SEAT_MODEL_PLANNER</code>（规划器）/ <code>APEX_SEAT_MODEL_EXECUTER</code>（执行器）/ <code>APEX_SEAT_MODEL_REVIEWER</code>（评审器），见 <code>src/lib/router/seat-models.ts</code>，执行器现在<strong>有</strong>自己的模型槽。此前那句「执行器压根没有模型槽是实测事实」只对 <strong>plan 臂</strong>成立：那里的执行步（<code>planExecuteReview.ts:202-246</code> 的 <code>runOneAction</code>）是确定性副作用派发、本来就不发模型请求；模型驱动的执行只在 agent 臂那条循环里。另一半同样要说清：座位不只配了模型，还带<strong>角色名</strong>（<code>SEAT_WORKER_ROLE</code> → <code>Manager / Executor / Critique</code>），agent 臂默认就把执行器的 RoleSpec 注进决策提示词——这一处<strong>不是</strong>缺省不变形，是默认开启的提示词变更。<strong>边界</strong>：三个 env 都不配 ⇒ 座位字段一个都不进 INPUT、模型沿用本次 run 的；「分类走小模型、推理走大模型」那种自动判据还不存在，现在是<strong>人来配</strong>，不是系统来判。</p></div>
+        <div class="card"><div class="k">模型分层</div><h3>三张座位各配各的模型，缺省仍是同一个</h3><p>这里的「分层」不是系统自己判「这步简单，换便宜的模型」，而是<strong>人给的槽位</strong>：真实机制是角色化模型槽与 fallback 链（<code>model-orchestration.ts:78-84</code>），小模型只用在检索改写等辅助槽。2026-11-03 我把这一节的口径更正过一次——座位由两张扩到三张，执行器<strong>有</strong>了自己的模型槽，此前那句「执行器压根没有模型槽」是错的。</p><p>另一半也要说清：座位不只配了模型，还带<strong>角色名</strong>，而角色块是<em>默认开启</em>的提示词变更——这一处没有「缺省不变形」可讲。<strong>边界</strong>：「分类走小模型、推理走大模型」那种自动判据还不存在，现在是<strong>人来配</strong>，不是系统来判。</p>
+          <details class="evi">
+            <summary>证据 · 三张座位、错在哪一环、以及缺省行为</summary>
+            <div class="evi-body">
+              <p><strong>三张座位</strong>：<code>APEX_SEAT_MODEL_PLANNER</code>（规划器）/ <code>APEX_SEAT_MODEL_EXECUTER</code>（执行器）/ <code>APEX_SEAT_MODEL_REVIEWER</code>（评审器），见 <code>src/lib/router/seat-models.ts</code>。</p>
+              <p><strong>旧口径错在哪</strong>：那句「执行器没有模型槽」只对 <strong>plan 臂</strong>成立——那里的执行步（<code>planExecuteReview.ts:202-246</code> 的 <code>runOneAction</code>）是确定性副作用派发、本来就不发模型请求；模型驱动的执行只在 agent 臂那条循环里。</p>
+              <p><strong>缺省行为</strong>：三个 env 都不配 ⇒ 座位字段一个都不进 INPUT、模型逐字沿用本次 run 的。角色名（<code>SEAT_WORKER_ROLE</code> → <code>Manager / Executor / Critique</code>）不随之关闭，agent 臂默认把执行器的 RoleSpec 注进决策提示词。</p>
+            </div>
+          </details>
+        </div>
         <div class="card"><div class="k">预算</div><h3>轮次与时间帽在跑，token 帽在休眠件里</h3><p>线上实跑的是轮次帽（<code>pi-agent-loop-guard.ts:42,177-237</code>）与时间上限（<code>pi-agent-runner.ts:856,974</code>），超了就早停或抛错，<strong>没有</strong>「先降级再熔断」那条链。<strong>诚实边界</strong>：<code>tokenBudget</code> 早停写在 <code>planner-executor.ts:92,217-227</code> 的双智能体编排类里，而该类全仓 <code>new</code> 计数为 <strong>0</strong>——它是休眠件，我不把它算成在跑的预算面。</p></div>
       </div>
     </div>
@@ -104,14 +121,50 @@
         <p class="note">这两块的开销不是「模型贵」，是<strong>结构贵</strong>：每个任务一份干净工作区、每个空闲会话一个常驻执行体。下面每个毫秒都能在本机复算，也带着把它限制住的边界——把倍数写成「线上已兑现的收益」是我不做的事。</p>
       </div>
       <div class="cards reveal">
-        <div class="card"><div class="k">工作区 provider</div><h3>先证逐字节等价，再谈 ×214</h3><p>把「工作区」抽象成一个接口（<code>mount / read / write / list / commit / unmount</code>，<code>src/lib/workspace/</code>），三后端并存：<code>git-worktree</code>（保留作回退基线）、<code>overlay</code>（LayerFS 语义、无 FUSE）、<code>layerfs</code>（真实适配器，缺依赖就<strong>类型化报错、不静默降级</strong>）。在真实仓库（5,305 个跟踪文件）先证逐字节等价（<code>PARITY_OK</code>、<code>diffs = []</code>），再量差：<strong>挂载 28ms vs 64,864ms（×2,317）· 卸载 92ms vs 165,691ms（×1,801）· 全链路 1,132ms vs 242,111ms（×214）</strong>。<strong>诚实边界</strong>：默认执行路径仍是 <code>git-worktree</code>；overlay 目前只被评测 harness 直接消费（<code>PARADIGM_AB_WORKSPACE=overlay</code>），而 <code>resolveProvider</code> 在 <code>src/</code> 与 <code>scripts/</code> <strong>零调用方</strong> ⇒ 这是「选项已备好」，不是「线上已切换」。</p></div>
-        <div class="card"><div class="k">LayerFS 在本机跑通</div><h3>建/拆便宜三个数量级，每一次文件访问贵 240 倍</h3><p>自建 sealed bundle 把 LayerFS 真跑起来（Windows 驱动 → WSL2 worker → 容器内 FUSE）：真实仓库一轮 <code>fork + mount + unmount</code> <strong>≈45–260ms</strong>，对照同仓 worktree 建拆 <strong>≈230,555ms</strong>；一次性导入 5,327 个文件 = 132s，一轮即回本。<strong>同一批实测也把反面量了</strong>：每次文件操作经 Sandbox <code>exec</code> 的容器往返税中位 <strong>240ms</strong>，而宿主直读同一批文件中位 <strong>1ms</strong> ⇒ 结论是「优化建/拆，代价是每一次访问」，划算与否取决于这个 run 动多少文件，不是无条件更快。跨界另有两条硬上限（<code>exec</code> stdout 按 1MiB 分页、Linux 单参数 128KiB）⇒ 读要窗口循环、写要分块并对账落盘尺寸。还有一条会<strong>静默判错</strong>的坑：<code>capabilities.hostPath === false</code>，返回的根路径是容器内路径，评测 harness 因此显式拒绝 <code>=layerfs</code>——把它当宿主 <code>cwd</code> 去 grading 会读错树。</p></div>
+        <div class="card"><div class="k">工作区 provider</div><h3>先证逐字节等价，再谈 ×214</h3><p>「干净工作区」被抽象成一个接口（<code>mount / read / write / list / commit / unmount</code>，<code>src/lib/workspace/</code>），三个后端并存。顺序是故意的：<em>先在真实仓库（5,305 个跟踪文件）证明三个后端逐字节等价，再谈谁快</em>——等价没证之前，倍数没有意义。</p><p>证完之后量差：<strong>挂载 28ms vs 64,864ms（×2,317）· 卸载 92ms vs 165,691ms（×1,801）· 全链路 1,132ms vs 242,111ms（×214）</strong>。这不是「线上已切换」——抽屉里写的是它到底被谁在用。</p>
+          <details class="evi">
+            <summary>证据 · 三后端、等价证明与真实消费方</summary>
+            <div class="evi-body">
+              <p><strong>三后端</strong>：<code>git-worktree</code>（保留作回退基线）、<code>overlay</code>（LayerFS 语义、无 FUSE）、<code>layerfs</code>（真实适配器，缺依赖就<strong>类型化报错、不静默降级</strong>）。</p>
+              <p><strong>等价</strong>：真实仓库 5,305 个跟踪文件，逐字节比对 <code>PARITY_OK</code>、<code>diffs = []</code>。</p>
+              <p><strong>边界</strong>：默认执行路径仍是 <code>git-worktree</code>；overlay 目前只被评测 harness 直接消费（<code>PARADIGM_AB_WORKSPACE=overlay</code>），而 <code>resolveProvider</code> 在 <code>src/</code> 与 <code>scripts/</code> <strong>零调用方</strong> ⇒ 这是「选项已备好」，不是「线上已切换」。</p>
+            </div>
+          </details>
+        </div>
+        <div class="card"><div class="k">LayerFS 在本机跑通</div><h3>建/拆便宜三个数量级，每一次访问贵 240 倍</h3><p>自建 sealed bundle 把 LayerFS 真跑起来（Windows 驱动 → WSL2 worker → 容器内 FUSE）：真实仓库一轮 <code>fork + mount + unmount</code> <strong>≈45–260ms</strong>，对照同仓 worktree 建拆 <strong>≈230,555ms</strong>；一次性导入 5,327 个文件 = 132s，一轮即回本。</p><p>但同一批实测也把反面量了：每次文件操作经容器 <code>exec</code> 往返的税中位 <strong>240ms</strong>，宿主直读同一批文件中位 <strong>1ms</strong>。⇒ 结论不是「更快」，是<strong>优化建/拆、代价落在每一次访问上</strong>，划算与否取决于这个 run 动多少文件。</p>
+          <details class="evi">
+            <summary>证据 · 两条跨界硬上限与一条会静默判错的坑</summary>
+            <div class="evi-body">
+              <p><strong>上限</strong>：<code>exec</code> stdout 按 <span class="n">1MiB</span> 分页、Linux 单参数 <span class="n">128KiB</span> ⇒ 读要窗口循环、写要分块并对账落盘尺寸。</p>
+              <p><strong>会静默判错的坑</strong>：<code>capabilities.hostPath === false</code>——返回的根路径是容器内路径。评测 harness 因此显式拒绝 <code>=layerfs</code>：把它当宿主 <code>cwd</code> 去 grading 会读错整棵树，而且不会报错。</p>
+            </div>
+          </details>
+        </div>
         <div class="card"><div class="k">空闲挂起运行时</div><h3>没有「挂起」这个动作：队列空 ⇒ 无常驻 driver</h3><p>移植自 infinity 的 <code>agent_scale.rs</code>（<code>src/lib/agent-runtime/</code>，1,042 行）：每线程一个输入队列、driver 惰性起、状态只在 store、事件走有界环形缓冲。核心性质不是「省了多少内存」，而是<strong>队列空 ⇒ 一个 driver 都不驻留</strong>——挂起是默认态，唤醒才是异常态。它由 12 项守卫直接断言 <code>residentDrivers === 0</code>（40 线程 × 4 轮之后归零），不靠内存读数推断；并补上示例不需要而生产必须的四条：单飞、有界队列背压、轮转公平、优雅关停与错误隔离。</p></div>
         <div class="card"><div class="k">规模实测</div><h3>空闲近乎不要钱，价目表上那一格是唤醒</h3><p><code>npm run eval:agent:scale</code>（2026-11-03 本机，2000 agent × 5 轮合成回显负载）两种配置都测：历史在<strong>内存态</strong> 10,000 轮 <strong>0.7s</strong> 跑完、idle 常驻 <strong>17.8 KiB/agent</strong>、冷唤醒均值 <strong>72ms</strong>；历史<strong>落盘（JSONL）</strong>态 idle RSS <strong>49.3MiB，反而低于 63.7MiB 基线</strong>——空闲净成本≈0，代价是冷唤醒均值 <strong>8.36s</strong>（磁盘 + 单飞排队）。测两种是故意的：内存态里历史从没离开 RAM，所谓「挂起释放内存」在那个配置下就是个假数。</p></div>
       </div>
       <div class="rows reveal" style="margin-top:18px">
-        <div class="row"><div class="rk">判定要走到执行面才算数——但要说清哪一层走到了</div><div class="rv">路由之外，2026-11-03 落了三件事，<strong>进度并不同步，别混成一句「执行面已接」或「都没接」</strong>：<br>① <strong>座位模型 + 角色名已进入口</strong>（<code>src/lib/router/seat-models.ts</code>）：<code>APEX_SEAT_MODEL_PLANNER / _EXECUTER / _REVIEWER</code> 在<strong>入口</strong>读 env，以 <code>planModel</code> / <code>reviewModel</code>（plan 臂）与 <code>model</code>（agent 臂）进 workflow INPUT——<strong>不在工作流里读 env</strong>（沙箱违例，且宿主与 worker 容器档位不同 ⇒ 重放可能翻成另一个模型），<code>continueAsNew</code> 用 <code>...input</code> 展开自动携带；env 不配 ⇒ 字段不进 INPUT、模型沿用本次 run 的。<strong>但角色名 <code>role: "Executor"</code> 是无条件带的</strong>，于是 <code>agentStep.ts:385</code> 默认就把执行器 RoleSpec 注进决策提示词——这一处缺省<strong>不是</strong>零变化。<br>② <strong>建项目派发层已接线、门缺省关</strong>：<code>src/lib/router/provision.ts</code> 用既有六步 helper 建项目并把本轮会话绑上（项目键取自消息的幂等种子 sha256 ⇒ 同一句话重跑派同一个键；失败以 <code>{ ok: false }</code> 返回、绝不抛出），由分诊管线 <code>src/lib/feeds/task-pipeline.ts:217</code> 在 <code>new_project</code> 判定上调用，门 <code>APEX_ROUTER_AUTO_CREATE_PROJECT</code> 缺省关 ⇒ 关时判定只写进任务体、活仍留在给定项目里。<br>③ <strong>worker 生命周期目前只有判定</strong>：纯函数三选一 <code>answer_only | maintain | spawn</code>（<code>src/lib/router/worker-lifecycle.ts:72</code>，8 项测试）——内容没变 = 不起 worker，同一张座位已挂着就维持（重复起跑 = 重复付费 + 重复写）；模型只参与「要几张座位」，不参与「要不要起」。<strong>边界</strong>：<code>decideWorkerLifecycle</code> 除自身测试外零生产消费方，起跑派发函数 <code>dispatchProjectWorkers</code> 全仓零定义 ⇒ worker 那一面还没接到执行；真工作流证据 <code>tests/temporal-seat-dispatch.integration.ts</code>（createLocal 起临时 dev server、活动全 mock、不需要 Docker）目前<strong>不在 GUARDS 的 77 条里</strong>，不进 <code>npm run verify</code>，要手动 <code>npx tsx</code> 跑；改动要吃进容器化 worker 仍需 bundle 重建 + 进程重启，而本机 Docker 引擎当前起不来（dev 侧 <code>tsx</code> 直跑源码，重起即生效）。</div></div>
-        <div class="row"><div class="rk">两个会静默吃掉收益的缺陷</div><div class="rv">① <code>git worktree add</code> 中途被杀留下 <code>locked initializing</code> 注册，此后 <code>git worktree prune</code> <strong>永远跳过它</strong>——目录早没了、注册不可回收，本仓曾累积 <strong>354 条注册 / 约 29 GiB</strong>；已修：挂载前先 unlock + prune。② store 放进仓库内会抵消全部收益：同一个删除动作，仓库内 <strong>4,998ms</strong>、系统临时目录 <strong>93ms</strong>（仓库被索引器与杀软盯着）；已修：cell 的 store 默认落系统临时目录（<code>APEX_WORKSPACE_STORE</code> 可覆盖）。</div></div>
+        <div class="row"><div class="rk">判定要走到执行面才算数</div><div class="rv"><p>2026-11-03 落了三层，但<strong>三层进度并不同步</strong>——所以既不写成「执行面已接」，也不写成「都没接」：座位模型与角色名走到了入口，建项目的派发层已接线、门缺省关，worker 那一面<strong>目前只有判定</strong>。三层里只有一处缺省不是零变化：模型 env 不配则字段不进，但角色名是无条件带上的，于是执行器的角色契约默认就注进了决策提示词。</p>
+            <details class="evi">
+              <summary>证据 · 三层的落点、门与边界</summary>
+              <div class="evi-body">
+                <p><strong>① 座位模型 + 角色名已进入口</strong>（<code>src/lib/router/seat-models.ts</code>）：<code>APEX_SEAT_MODEL_PLANNER / _EXECUTER / _REVIEWER</code> 在入口读 env，以 <code>planModel</code> / <code>reviewModel</code>（plan 臂）与 <code>model</code>（agent 臂）进 workflow INPUT——<strong>不在工作流里读 env</strong>（沙箱违例，且宿主与 worker 容器档位不同 ⇒ 重放可能翻成另一个模型），<code>continueAsNew</code> 用 <code>...input</code> 展开自动携带；env 不配 ⇒ 字段不进 INPUT、模型沿用本次 run 的。<strong>但角色名 <code>role:"Executor"</code> 无条件携带</strong>，<code>agentStep.ts:385</code> 据此把执行器 RoleSpec 注进决策提示词——这一处缺省<strong>不是</strong>零变化。</p>
+                <p><strong>② 建项目派发层已接线、门缺省关</strong>：<code>src/lib/router/provision.ts</code> 用既有六步 helper 建项目并把本轮会话绑上（项目键取自消息的幂等种子 sha256 ⇒ 同一句话重跑派同一个键；失败以 <code>{ ok: false }</code> 返回、绝不抛出），由分诊管线 <code>src/lib/feeds/task-pipeline.ts:217</code> 在 <code>new_project</code> 判定上调用，门 <code>APEX_ROUTER_AUTO_CREATE_PROJECT</code> 缺省关 ⇒ 关时判定只写进任务体、活仍留在给定项目里。</p>
+                <p><strong>③ worker 生命周期目前只有判定</strong>：纯函数三选一 <code>answer_only | maintain | spawn</code>（<code>src/lib/router/worker-lifecycle.ts:72</code>，8 项测试）——内容没变 = 不起 worker，同一张座位已挂着就维持（重复起跑 = 重复付费 + 重复写）；模型只参与「要几张座位」，不参与「要不要起」。边界：<code>decideWorkerLifecycle</code> 除自身测试外零生产消费方，起跑派发函数 <code>dispatchProjectWorkers</code> 全仓零定义 ⇒ 还没接到执行；真工作流证据 <code>tests/temporal-seat-dispatch.integration.ts</code>（createLocal 起临时 dev server、活动全 mock、不需要 Docker）<strong>不在 GUARDS 的 <span class="n">77</span> 条里</strong>，不进 <code>npm run verify</code>，要手动 <code>npx tsx</code> 跑；改动要吃进容器化 worker 仍需 bundle 重建 + 进程重启，而本机 Docker 引擎当前起不来（dev 侧 <code>tsx</code> 直跑源码，重起即生效）。</p>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="row"><div class="rk">两个会静默吃掉收益的缺陷</div><div class="rv"><p>这两个都不是崩，是<strong>静默</strong>：一个让注册表再也回收不了，一个让优化在某个目录下等于没做。都是本仓实测，都已修。</p>
+            <details class="evi">
+              <summary>证据 · 触发条件、量级与修法</summary>
+              <div class="evi-body">
+                <p>① <code>git worktree add</code> 中途被杀留下 <code>locked initializing</code> 注册，此后 <code>git worktree prune</code> <strong>永远跳过它</strong>——目录早没了、注册不可回收，本仓曾累积 <span class="n">354 条注册 / 约 29 GiB</span>；已修：挂载前先 unlock + prune。</p>
+                <p>② store 放进仓库内会抵消全部收益：同一个删除动作，仓库内 <span class="n">4,998ms</span>、系统临时目录 <span class="n">93ms</span>（仓库被索引器与杀软盯着）；已修：cell 的 store 默认落系统临时目录（<code>APEX_WORKSPACE_STORE</code> 可覆盖）。</p>
+              </div>
+            </details>
+          </div>
+        </div>
         <div class="row"><div class="rk">口径</div><div class="rv">这些数都是<strong>本机实测</strong>，且是混合文件系统口径：LayerFS 的数字在 WSL2 ext4 内、源树经 9P 读入，git 对照的数字在 NTFS 上由 Windows git 做，合成树（2,001 文件）也小于本仓（5,305 文件）⇒ <strong>方向与量级可信，绝对值不可跨表相减</strong>。</div></div>
       </div>
     </div>
