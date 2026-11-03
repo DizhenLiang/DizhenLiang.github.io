@@ -142,7 +142,7 @@
                 <p><strong>未生效</strong>：动态路由 96% 影子模式，预估收益是影子读数；三段式 Plan-Execute-Review 自 2026-11-02 起由入口路由决定启不启动、两臂都有真实请求跑通，但它押的那格 +0.083 / p=0.625 未过显著性、代价 prompt token +71%、分档阈值 <code>T_SIMPLE=30</code> 未校准；planner→executor→reviewer 的<strong>写权</strong>拓扑仍只在评测 harness（<code>src/</code> 零调用），生产侧 reviewer 是只读座位；四范式引擎 <code>registry.json</code> 已入库但总开关默认 <code>enabled: false</code>；预注册 <code>k_per_task=3</code> 从未执行、<code>registration.json</code> 的 <code>locked_at</code> 仍是 <code>PRE-RUN</code> ⇒ 当前所有 p 值与 promote 级结论无效。</p>
                 <p><strong>结构收益 ≠ 线上收益</strong>：工作区三后端里默认执行路径仍是 <code>git-worktree</code>，overlay 只被评测 harness 直接消费，<code>resolveProvider</code> 与 agent-runtime 在 <code>src/</code>+<code>scripts/</code> <strong>零生产调用方</strong>。实测倍数（本地）：全链路 <span class="n">1,132ms vs 242,111ms（×214）</span>；空闲挂起运行时 2000 agent × 5 轮，idle 常驻 <span class="n">17.8 KiB/agent</span>、冷唤醒 <span class="n">72ms</span>，落盘态 idle RSS <span class="n">49.3MiB &lt; 63.7MiB 基线</span>、代价冷唤醒均值 <span class="n">8.36s</span>。同一批实测也量了反面：每次文件操作经容器 <code>exec</code> 中位 <span class="n">240ms</span>，宿主直读同一批文件中位 <span class="n">1ms</span> ⇒ 便宜的是建/拆，贵的是每一次访问。</p>
                 <p><strong>卫生项</strong>：台账写入仍是就地覆写（无锁、无 temp+rename），消费者可读到中间态，已列为待修；<code>:7233</code> 上现在挂的是评测用临时 dev server，不是生产 Temporal，别按端口臆断现场可达。</p>
-                <p><strong>守卫会长</strong>，所以数值得带日期：2026-11-03 实测 <code>test:guards</code> <span class="n">78 条</span>（同日早间读数 77——清单当天在长）；仓内记录的最近一次全量实跑 67/68（那份记录时清单是 68 条——分母跟着清单长，两个数得一起看）。</p>
+                <p><strong>守卫会长，而且同一个「条数」有三个口径</strong>，所以数值必须带日期与复算命令：2026-11-03 傍晚实测 <code>scripts/run-guards.mjs</code> 的 GUARDS 数组 <strong>HEAD 74 条 / 本地工作树 79 条</strong>（同日早间读数 77——清单当天在长），差的那 5 条登记还在并发会话的在飞索引里没入库；元门禁 <code>guard-coverage</code> 报的 <strong>78</strong> 是第三种口径（79 条里 1 条指向 <code>src/lib/platform/hitl.test.ts</code>，不在 <code>tests/</code> 下）。⇒ 别人 clone 下来复算得到的是 <strong>74</strong>，对外只报这个数并注明在飞 5 条。另注：<code>guard-coverage</code> 是「读源码文件」的守卫，2026-11-03 曾被同工作树里另一会话的一次提交采到半写快照、报出假红（同一批守卫那一轮明明执行过它们），单跑立刻绿——所以清单红先复跑单文件，再谈改代码。仓内记录的最近一次全量实跑 67/68（那份记录时清单是 68 条——分母跟着清单长，两个数得一起看）。</p>
               </div>
             </details>
           </div>
@@ -175,7 +175,7 @@
           <div class="k">03 / 收口</div>
           <h3>卡死、重复、静默错，各有专门的东西接住</h3>
           <p>核心 run 靠重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 另有 watchdog（看门狗）重拉。<strong>判活只认 pollers，不认端口</strong>——这条是 III 幕那次教训换来的。</p>
-          <div class="meta">26 项 judge 完整性守卫 · 78 条 test:guards · 熔断默认连续 2 次</div>
+          <div class="meta">26 项 judge 完整性守卫 · 74 条守门清单已入库可复算 · 熔断默认连续 2 次</div>
         </div>
         <div class="card">
           <div class="k">04 / 可观测</div>
@@ -235,13 +235,13 @@
         <p class="note">数字大不如数字真。每一个都能在仓库里复算，口径写清楚——口径比数值更要紧，这一点本身就是这条轨迹的一部分。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,250</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-03 复算）</div></div>
-        <div class="fact"><div class="v">258,283</div><div class="l">行自研代码（src+tests+scripts，1,040 个文件，单遍求和）</div></div>
+        <div class="fact"><div class="v">1,253</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-03 复算）</div></div>
+        <div class="fact"><div class="v">269,540</div><div class="l">行自研代码（src+tests+scripts，1,084 个文件，单遍求和）</div></div>
         <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹（台账去重后 81 个格子）</div></div>
-        <div class="fact"><div class="v">78</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数，2026-11-03 实测）</div></div>
+        <div class="fact"><div class="v">74</div><div class="l">条守门清单<strong>已入库</strong>（HEAD 的 <code>run-guards.mjs</code> GUARDS 数组可复算；工作树在飞另有 5 条登记未进 HEAD，2026-11-03 实测）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">口径</div><div class="rv">1,250 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
+        <div class="row"><div class="rk">口径</div><div class="rv">1,253 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
         <div class="row"><div class="rk">别信大数</div><div class="rv">这一栏里的每个数都有日期和复算命令，因为「没有口径」这件事我自己犯过（见第三幕）。守卫清单会长，所以带日期比带数值有用。</div></div>
       </div>
     </div>
