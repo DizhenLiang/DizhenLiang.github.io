@@ -71,7 +71,7 @@
         <div class="card"><div class="k">求和方式</div><h3><code>xargs wc -l | tail -1</code> 造出一个假数</h3><p><code>xargs</code> 会把超长文件清单拆成多批，每批各打一个 <code>total</code>，<code>tail -1</code> 只取最后一批。同一范围这样算只剩 <strong>71,506</strong> 行；单遍求和的真实值是 <strong>258,283 行 / 1,040 个文件</strong>（<code>src</code> + <code>tests</code> + <code>scripts</code>，2026-11-02 复算）。</p><div class="meta">凡 <code>xargs … | tail -1</code> 得到的 total 都不可信</div></div>
         <div class="card"><div class="k">行数 ≠ 格子数</div><h3>10-30 那份「零缺口」结论就是这么来的</h3><p>两份台账合计 <strong>206 行</strong>，去重后只有 <strong>81 个格子</strong>（一个「任务 × 臂」的评测单元）；重复 125 行，重复率 <strong>154.3%</strong>。只看主台账是 198 行 → 76 个格子。数的是行、宣布的是 cell、中间没有去重步骤，就会报出「全有判分、零缺口」。</p><div class="meta">取数规则：同一 key 只认最新行，且必须先声明 key 的组成</div></div>
         <div class="card"><div class="k">范围口径</div><h3>「测试文件 307」和「162」可以都对</h3><p>差别只在把 <code>.claude/</code> 里的角色库测试算不算。现在的公开口径一律写清范围：<strong>git 跟踪的 <code>*.test.ts / .tsx / .mts</code> = 168 个</strong>（2026-11-03 复算；307 / 162 是 11-02 前后的两个历史读数，留着是因为它们演示的就是"口径决定结论"这件事），其中用例声明 1,050 条（只数行首 <code>it()</code>/<code>test()</code>，换定义就不是同一个数）；API 路由 61 个（<code>src/app/api/**/route.ts</code>，复算未变）。口径不写，数字就会被当成立场。</p><div class="meta">同一指标只在一处定义，别处引用</div></div>
-        <div class="card"><div class="k">日期</div><h3>会自己漂的数必须带复算命令</h3><p>提交数 10-30 是 1,205、11-01 是 1,206、11-02 是 1,211、今天 <strong>1,243</strong>——不是我数错，是它在长（11-02 到今天 +32 次提交）。守卫清单从 70 条长到 <strong>77 条</strong>（无重复、目标文件全部存在）。所以公开页每个数都带日期和一行命令，读的人能自己重跑。</p><div class="meta"><code>git rev-list --count HEAD</code> = 1,243（2026-11-03）</div></div>
+        <div class="card"><div class="k">日期</div><h3>会自己漂的数必须带复算命令</h3><p>提交数 10-30 是 1,205、11-01 是 1,206、11-02 是 1,211、11-03 早间 <strong>1,243</strong>、同日傍晚 <strong>1,250</strong>——不是我数错，是它在长（11-02 到 11-03 一天 +39 次提交）。守卫清单从 70 条长到 <strong>78 条</strong>（同日早间读数 77；无重复、目标文件全部存在）。所以公开页每个数都带日期和一行命令，读的人能自己重跑。</p><div class="meta"><code>git rev-list --count HEAD</code> = 1,250（2026-11-03）</div></div>
       </div>
     </div>
   </section>
@@ -193,7 +193,7 @@
         <p class="note">口径写清楚，比数字大更要紧。以下均为 2026-11-02 在 Apex-Agent 工作区 HEAD 上实测。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,243</div><div class="l">次提交 <code>git rev-list --count HEAD</code>（2026-11-03）</div></div>
+        <div class="fact"><div class="v">1,250</div><div class="l">次提交 <code>git rev-list --count HEAD</code>（2026-11-03）</div></div>
         <div class="fact"><div class="v">258,283</div><div class="l">行 · 单遍求和 <code>git ls-files src tests scripts</code>（1,040 文件）</div></div>
         <div class="fact"><div class="v">76</div><div class="l">条守卫清单（数组区间内取字符串字面量，跳过注释；重复 0、目标缺失 0）</div></div>
         <div class="fact"><div class="v">206<span class="u">→</span>81</div><div class="l">台账行数 → 去重后格子数（两份台账合计）</div></div>
