@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>梁迪臻 · Apex-Agent</title>
-<meta name="description" content="梁迪臻，Apex-Agent 作者。一套把长任务跑成可回放轨迹的智能体设施：Temporal 执行权威、沙箱隔离、LLM-as-judge 评测与守卫。">
+<title>梁迪臻 · Apex-Agent：一条会说话的黑匣子轨迹</title>
+<meta name="description" content="梁迪臻，Apex-Agent 作者。起点不是让智能体更聪明，而是让它说的话能被验证：Temporal 执行权威、可复算的评测台账、会变红的守卫，和一个知道自己停在哪的诚实面。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -31,24 +31,123 @@
   <section class="hero">
     <div class="wrap grid">
       <div>
-        <div class="eyebrow">一个人 · 一套设施 · 一条可回放的轨迹</div>
-        <h1>把长任务<br>做成<span class="em">可回放的轨迹</span>。</h1>
-        <p class="lede">我是梁迪臻，Apex-Agent 的作者。我构建可观测、可审计、可复现的智能体系统——让每次执行都留下一条能回放、能定位、能从失败里变强的轨迹。</p>
+        <div class="eyebrow">一个人 · 八个月 · 一台带黑匣子的设施</div>
+        <h1>它说任务<br>跑完了。我<span class="em">没信</span>。</h1>
+        <p class="lede">我做 Apex-Agent 的起点不是"让智能体更聪明"，而是"让它说的话能被验证"。一个跑完长任务的 agent 会告诉你它交付了三个文件——而仓库里一个字节都没变。这套设施就是为了对付这句话：执行交给不会说谎的权威，判分交给会变红的守卫，结论交给能被我自己复算的脚本。</p>
         <div class="actions">
-          <a class="btn btn-primary" href="eval.html">看评测全流程 →</a>
-          <a class="btn btn-ghost" href="#facility">了解设施架构</a>
+          <a class="btn btn-primary" href="#story">读这条轨迹 →</a>
+          <a class="btn btn-ghost" href="eval.html">看它怎么取证</a>
         </div>
       </div>
       <div class="trace" aria-hidden="true">
-        <div class="trace-head"><span>LIVE TRACE</span><span class="live"><i></i>RUNNING</span></div>
+        <div class="trace-head"><span>BLACK BOX</span><span class="live"><i></i>RECORDING</span></div>
         <div class="trace-body">
-          <div class="trow"><span class="idx">01</span><span class="act">dispatch</span><span class="detail">ingress 白名单 · 默认拒绝</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">02</span><span class="act">execute</span><span class="detail">OpenSandbox 容器 · gVisor</span><span class="st ok">done</span></div>
-          <div class="trow"><span class="idx">03</span><span class="act">project</span><span class="detail">Temporal History → PG 读模型</span><span class="st ok">done</span></div>
-          <div class="trow now"><span class="idx">04</span><span class="act">review</span><span class="detail">LLM-as-judge · 26 项守卫</span><span class="st run">running</span></div>
-          <div class="trow"><span class="idx">05</span><span class="act">guards</span><span class="detail">巡检 / 契约 / fail-loud</span><span class="st">queued</span></div>
+          <div class="trow"><span class="idx">01</span><span class="act">不信</span><span class="detail">自我陈述不算证据</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">02</span><span class="act">授权</span><span class="detail">Temporal 重放 · 幂等键</span><span class="st ok">done</span></div>
+          <div class="trow"><span class="idx">03</span><span class="act">取证</span><span class="detail">守卫会变红 · 数字可复算</span><span class="st ok">done</span></div>
+          <div class="trow now"><span class="idx">04</span><span class="act">反噬</span><span class="detail">它抓到我四次</span><span class="st run">running</span></div>
+          <div class="trow"><span class="idx">05</span><span class="act">未竟</span><span class="detail">41 格从未执行</span><span class="st">queued</span></div>
         </div>
-        <div class="trace-foot"><span>step 04 / 05</span><span>◎ 失败即轨迹</span></div>
+        <div class="trace-foot"><span>act 04 / 05</span><span>◎ 失败即轨迹</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="story">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><div class="overline">The Spine / 一条线</div><h2>这不是一份功能清单，是一次转弯。</h2></div>
+        <p class="note">四幕。每一幕的每个数字都能当场复算，取证口径收在正文下面的「证据」抽屉里——正文负责让人读下去，抽屉负责让人问到底。</p>
+      </div>
+
+      <div class="story reveal">
+
+        <article class="beat">
+          <div class="beat-rail"><b>I</b>不信任</div>
+          <div>
+            <h3>问题不是它跑不完，是它报完成。</h3>
+            <div class="prose">
+              <p>第一批长任务跑下来，最刺眼的不是失败，是<em>成功的样子</em>：agent 在最后一轮写了一段漂亮的交付说明，状态机记成 <code>final</code>，评分给了分。我去看工作区——文件是空的。它没有撒谎的动机，它只是<strong>没人要求它为自己说的话负责</strong>。</p>
+              <p>所以第一刀不砍在模型上，砍在契约上：宣称有交付物而写入台账里零落盘，就不许报成功。这条后来变成评测里最硬的一格——不是提示词里多写一句"请诚实"，是<strong>结构上不给它说谎的位置</strong>。</p>
+              <p>同一条逻辑往外推，就推到了整个系统的形状：既然自我陈述不可信，那"发生过什么"必须由一个不依赖陈述者的东西来定。</p>
+            </div>
+            <details class="evi">
+              <summary>证据 · 落盘强制门与它的来历</summary>
+              <div class="evi-body">
+                <p>final 阶段四道残片守卫（截断 / 空证据 / 错位锚点 / 越界分数）断掉「假 final → 零落盘 → reward 0」连锁；交付清单与落地审计（landing audit）<strong>共用同一套路径解析</strong> ⇒ 门与审计永不漂移。评测面实测：<strong>无落盘一票否决 0 分</strong>，破坏性重写封顶 <span class="n">0.5</span>。</p>
+                <p>代价与被抓住的样本也是量出来的：复审失控取证到 cell 级（<code>dp-008/c</code> reviewer 162 轮里 <strong>86 轮</strong> deny/replay 且零升级出口）；复审轮帽 <code>REREVIEW_CEILING=32</code>，实测识别 <span class="n">16/76</span> 个 reviewer ≥60 轮的失控样本，<strong>纳入治理口径但不剔除</strong>——真实失败样本要留着。</p>
+                <p>结构强制优于提示词祈祷的方法论见<a href="lessons.html">心得</a>。</p>
+              </div>
+            </details>
+          </div>
+        </article>
+
+        <article class="beat">
+          <div class="beat-rail"><b>II</b>交给权威</div>
+          <div>
+            <h3>把"发生了什么"交给一个会重播的东西。</h3>
+            <div class="prose">
+              <p>执行权威我选了 Temporal，不是因为它时髦，是因为它回答了我唯一关心的问题：<em>崩溃之后，系统还记不记得真实发生过什么</em>。它的 History 可以重放，所以副作用恰好一次、重复投递被幂等键吸收、长任务靠 <code>continueAsNew</code>（续跑）而不是靠运气。</p>
+              <p>顺手做了一次减法。队列层我评估过 <code>bullmq</code>（Redis 上的任务队列），最终<strong>没有采用</strong>——但它的名字在我自己的简历和面经里活了两个月，写成"承载派发"。2026-11-03 我按调用方计数把它从文档里清了个干净：<code>src/</code> 里 <code>bullmq</code> 命中数为 <strong>0</strong>，那个手写的 Redis Streams 完成队列调用方也是 <strong>0</strong>。Redis 一条能力都没动，只是回到它真正在做的事：缓存、限流、会话、凭证池、分布式锁、跨进程缓存失效。</p>
+              <p>至于 PG，它被从"事实源"降级成"可以从 History 重建的读模型"，并且用四层卡口把唯一的写口锁死在一个文件里。<strong>绿只等于"没有字面量越权写"，不等于"已证明安全"</strong>——这句话我写进注释和 runbook，因为盲点也得是公开的。</p>
+            </div>
+            <details class="evi">
+              <summary>证据 · 三层分治与单写权威（可当场追问）</summary>
+              <div class="evi-body">
+                <p><strong>入口</strong>：<code>harness-bridge.publishTask</code> → <code>dispatchIngress</code>（默认拒绝白名单，唯一接入点）→ <code>startWorkflowIdempotent</code>，<strong>无中间队列中转</strong>；Temporal 不可达则 fail-closed，不回退 PG。task queue（任务队列）<code>apex-orchestrator</code> / <code>apex-side-effects</code> 即传输 + 执行层。</p>
+                <p><strong>调度面</strong>：平台 cron <strong>没有进程内守护</strong>，执行面就是 Temporal Schedule——<code>automation-scheduler.ts:224</code> <code>client.schedule.create</code>，action 指向 <code>apexCronJobRun</code>。2026-11-03 无 Docker 实测 worker 起来即 <span class="n">automation schedule reconcile: synced=1/1</span>。</p>
+                <p><strong>单写</strong>：TC-11 四层卡口 = 字面量/行扫描（正则命中 <code>INSERT INTO|UPDATE (session_tree|activity_results)</code>，出现在 <code>projection/sync.ts</code> 之外即红）+ import 边界扫描 + 运行时 fail-closed + worker 在场校验；<span class="n">5 个</span>故障注入测试串跑（41 处断言）。</p>
+                <p><strong>Kafka 的诚实位置</strong>：代码、compose、pm2 三条腿齐，但门在 <code>harness-bridge.ts:27-28</code> 要求 <code>KAFKA_INGRESS_ENABLED==="true"</code> <em>且</em> <code>KAFKA_INGRESS_MODE==="kafka"</code>，实测 <code>.env</code> 里 <code>grep KAFKA</code> <strong>零命中</strong> ⇒ 三道门全关，今天是旁路而非链路。</p>
+                <p><strong>人在环信号</strong>：<code>humanApproval</code>（<code>planExecuteReview.ts:92</code>）与 <code>agentHumanApproval</code>（<code>agentLoop.ts:79</code>）在 <code>src/</code> <strong>零发送方</strong>——全仓唯一的 <code>handle.signal(</code> 在测试夹具里。处理器定义了，没人按。</p>
+              </div>
+            </details>
+          </div>
+        </article>
+
+        <article class="beat">
+          <div class="beat-rail"><b>III</b>反噬</div>
+          <div>
+            <h3>这套标准回过头，抓到我四次。</h3>
+            <div class="prose">
+              <p>这是我最想让人看的部分，因为前面两幕说的是工程能力，这一幕说的是<strong>它对我也不留情面</strong>。四次里两次是我发布的数字，一次是我以为在跑其实根本没跑的东西，还有一次是文档活得比代码久。</p>
+              <div class="pull">台账写了 206 行，我说过「76/76 全有判分、零缺口」。按「任务 × 臂 × 批次」去重，只剩 81 个格子——重复率 154.3%。<cite>我数了行，宣布了格子，中间漏了去重</cite></div>
+              <p>第二次是路由押的那一格。原文引用「+0.17，唯一实测正例」，出自一份<strong>已经不在仓库里</strong>的批次报告。我用现台账独立复算，得 <strong>+0.083（n=6 配对，p=0.625）</strong>——没过大显著性；而代价是实测的：注入 planner/reviewer 后 treatment 臂 prompt token <strong>+71%</strong>。引用作废，代码注释和对外文案同步改掉。这一幕的口径只有一句：<em>机制被证明在跑，效果没有被证明。</em></p>
+              <p>第三次最险。我一直以为 worker（取活的进程）在跑，因为 <code>:7233</code> 端口在听。2026-11-03 判活脚本给我的是 <span class="n">pollers=0</span>（零个取活线程）——workflow 全在静默排队等超时。查下去是个真断：一个 workflow 侧的 import 在打包时被 outbase（打包基准目录）抬出一级，指向了一个<strong>从来没被写过的目录</strong>，于是 worker 构建自那个提交之后就一直是坏的。修完之后同一道门变成 <span class="n">pollers=1, pollers=1</span>。从这次起我定了条铁律：<em>端口在听不是活着，判活只认 pollers。</em></p>
+              <p>第四次就是上面那个 <code>bullmq</code>——注释、文档、我的简历都能声称它在服役，调用方计数说它不存在。<strong>注释只当线索，不当证据</strong>，这条现在写在方法论里。</p>
+            </div>
+            <details class="evi">
+              <summary>证据 · 四次的复算入口</summary>
+              <div class="evi-body">
+                <p>① <strong>台账</strong>：两份合计 <span class="n">206 行</span> → 去重 <span class="n">81 格</span>（主台账 198 行 = 76 格）；同批可配对 <span class="n">33 对</span>，门槛 60 对未达 ⇒ 只报方向信号。合并 meanΔ <strong>−0.015（11 胜 / 15 负 / 7 平）</strong>；分尺读数<strong>符号相反</strong>：DP 在人工判分尺 <strong>+0.153</strong>、在机器判分尺 <strong>−0.167</strong>。台账尚无运行标识列，4 / 81 个格子的两次运行塌缩成同一行。</p>
+                <p>② <strong>那一格</strong>：复算口径 = 按 任务×臂 去重取最新 seq + 精确符号翻转检验 + 取人工判分尺；权威分析文档另一口径 +0.150 / p=0.500 且自判"收益是单格伪影"。跨 judge 漂移：dp-007 双臂 ≤0.01，vm-018/c 低分端 +0.15（n=4，只报方向）。</p>
+                <p>③ <strong>worker</strong>：断点 <code>src/lib/temporal/workflows/agentLoop.ts:35</code>，引入提交 <code>a186bb16</code>，修复提交 <code>e62ed56c</code>（2026-11-03，只动 build 脚本 +9 行）；可行性先取证——被引的两个模块自身<strong>零 import</strong>（纯函数），且全仓 workflow 越出子树的 import <strong>只有这一条</strong>，所以补一个目录是完备解。</p>
+                <p>④ <strong>队列层</strong>：删除 <code>redis-completion-queue.ts</code>（252 行，<code>src/</code> 调用方 0）与误名的 <code>scripts/start-queue-worker.ts</code>、死键 <code>platform.queueEnabled</code>；提交 <code>ce322127</code>（21 文件 +71/−310），复核 <code>tsc</code> 退出 0、8 文件 80 测试通过。</p>
+              </div>
+            </details>
+          </div>
+        </article>
+
+        <article class="beat">
+          <div class="beat-rail"><b>IV</b>未竟</div>
+          <div>
+            <h3>我知道自己停在哪，并且把它写进正文。</h3>
+            <div class="prose">
+              <p>设施现在的真实形状是：<strong>执行面活着，判断面还在门槛外</strong>。要不要起一张工作座位，我已经写成纯函数（三选一：只答 / 维持 / 起新）并有测试；但那个判定<strong>除自身测试外没有生产消费方</strong>，起跑派发的函数全仓零定义 ⇒ 还没有真 worker 被它拉起。两条路由门都缺省 shadow（只记录、不改行为），动态路由 <span class="n">96%</span> 的任务仍走全拓扑——那个"预估省 43%"是影子读数，不是已实现收益。</p>
+              <p>配对数不足也有唯一根因，不好听但清楚：81 个任务里 <strong>41 个从未执行</strong>。而这一切此刻还压在一种依赖上——现场地址不可达，因为我的机器给不起 Docker 要的那 4GB：<em>总量 7,103MB，实测可用 458MB</em>。设施的设计撑住了，宿主页面的地基没撑住。</p>
+              <p>我不打算把这些藏进脚注。一份只讲做成的简历，和一台只会报成功的 agent，是同一种病。</p>
+            </div>
+            <details class="evi">
+              <summary>证据 · 边界清单与口径（逐条可追）</summary>
+              <div class="evi-body">
+                <p><strong>未生效</strong>：动态路由 96% 影子模式，预估收益是影子读数；三段式 Plan-Execute-Review 自 2026-11-02 起由入口路由决定启不启动、两臂都有真实请求跑通，但它押的那格 +0.083 / p=0.625 未过显著性、代价 prompt token +71%、分档阈值 <code>T_SIMPLE=30</code> 未校准；planner→executor→reviewer 的<strong>写权</strong>拓扑仍只在评测 harness（<code>src/</code> 零调用），生产侧 reviewer 是只读座位；四范式引擎 <code>registry.json</code> 已入库但总开关默认 <code>enabled: false</code>；预注册 <code>k_per_task=3</code> 从未执行、<code>registration.json</code> 的 <code>locked_at</code> 仍是 <code>PRE-RUN</code> ⇒ 当前所有 p 值与 promote 级结论无效。</p>
+                <p><strong>结构收益 ≠ 线上收益</strong>：工作区三后端里默认执行路径仍是 <code>git-worktree</code>，overlay 只被评测 harness 直接消费，<code>resolveProvider</code> 与 agent-runtime 在 <code>src/</code>+<code>scripts/</code> <strong>零生产调用方</strong>。实测倍数（本地）：全链路 <span class="n">1,132ms vs 242,111ms（×214）</span>；空闲挂起运行时 2000 agent × 5 轮，idle 常驻 <span class="n">17.8 KiB/agent</span>、冷唤醒 <span class="n">72ms</span>，落盘态 idle RSS <span class="n">49.3MiB &lt; 63.7MiB 基线</span>、代价冷唤醒均值 <span class="n">8.36s</span>。同一批实测也量了反面：每次文件操作经容器 <code>exec</code> 中位 <span class="n">240ms</span>，宿主直读同一批文件中位 <span class="n">1ms</span> ⇒ 便宜的是建/拆，贵的是每一次访问。</p>
+                <p><strong>卫生项</strong>：台账写入仍是就地覆写（无锁、无 temp+rename），消费者可读到中间态，已列为待修；<code>:7233</code> 上现在挂的是评测用临时 dev server，不是生产 Temporal，别按端口臆断现场可达。</p>
+                <p><strong>守卫会长</strong>，所以数值得带日期：2026-11-03 实测 <code>test:guards</code> <span class="n">77 条</span>；仓内记录的最近一次全量实跑 67/68（那份记录时清单是 68 条——分母跟着清单长，两个数得一起看）。</p>
+              </div>
+            </details>
+          </div>
+        </article>
+
       </div>
     </div>
   </section>
@@ -56,32 +155,32 @@
   <section class="section" id="facility">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">The Facility / 整套设施</div><h2>不是一套代码，是一台机器。</h2></div>
-        <p class="note">Apex-Agent 把「长任务」跑成「产品」：任务定义、沙箱执行、执行权威、评测与数据回流咬合成一个可自我改进的飞轮。下面五张卡都能在源码里指到位置。</p>
+        <div><div class="overline">The Machine / 幕后的机器</div><h2>四幕背后，是一台能自己收口的机器。</h2></div>
+        <p class="note">故事讲的是一次次转弯，转弯能发生是因为底下有东西在兜。四块都能在源码里指到位置。</p>
       </div>
       <div class="cards reveal">
         <div class="card">
           <div class="k">01 / 飞轮</div>
-          <h3>任务定义 → 隔离执行 → 智能体跑完 → 独立评测 → 数据回流</h3>
-          <p>每一轮都把「失败」变成下一轮的「数据」。评测里发现的假收敛，直接变成下一批的守卫项——不是一次性脚本，是持续收口的循环。</p>
-          <div class="meta">38 任务 × 2 臂 = 76 条轨迹</div>
+          <h3>失败不是事故，是下一轮的输入</h3>
+          <p>任务定义 → 隔离执行 → 跑完 → 独立评判 → 数据回流。评测里发现的假收敛，直接变成下一批的守卫项；判分自己也被判过——跨 judge 漂移量出来了就写进口径，不靠"应该没问题"。</p>
+          <div class="meta">38 任务 × 2 臂 = 76 条轨迹 · 台账去重后 81 格</div>
         </div>
         <div class="card">
-          <div class="k">02 / 隔离执行</div>
-          <h3>OpenSandbox 容器沙箱 + 只读评测工具环</h3>
-          <p>智能体生成的代码跑在容器沙箱里，sandboxed 控制面默认 gVisor（runsc），runc / docker 备援，可选 E2B 微 VM。评测执行另走一条只读、限定 cwd、断网的 worktree 工具环，不碰生产 workflow。</p>
-          <div class="meta">执行 / 评测 两面分离</div>
+          <div class="k">02 / 隔离</div>
+          <h3>让代码无处可逃，也让评测碰不到生产</h3>
+          <p>智能体生成的代码跑在容器沙箱里，控制面默认 gVisor（runsc），runc / docker 备援，可选 E2B 微 VM。评测执行另走一条只读、限定 cwd、断网的 worktree 工具环——执行面与评判面天生分离。</p>
+          <div class="meta">执行 / 评判 两面分离</div>
         </div>
         <div class="card">
-          <div class="k">03 / 兜底与巡检</div>
-          <h3>重放 · 幂等 · 巡检 · 熔断</h3>
-          <p>核心 run 靠 Workflow 重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 进程另有 watchdog 保活重拉。26 项 judge 完整性守卫 + 77 条 <code>test:guards</code>（<code>scripts/run-guards.mjs</code> 的 GUARDS 数组，可数）把「静默错误」提前暴露。</p>
-          <div class="meta">看板熔断默认连续 2 次 · <code>test:fault-injection</code> 串跑 5 个测试</div>
+          <div class="k">03 / 收口</div>
+          <h3>卡死、重复、静默错，各有专门的东西接住</h3>
+          <p>核心 run 靠重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 另有 watchdog（看门狗）重拉。<strong>判活只认 pollers，不认端口</strong>——这条是 III 幕那次教训换来的。</p>
+          <div class="meta">26 项 judge 完整性守卫 · 77 条 test:guards · 熔断默认连续 2 次</div>
         </div>
         <div class="card">
           <div class="k">04 / 可观测</div>
-          <h3>指标推送 + 时序 + 追踪，全链路批次 tag</h3>
-          <p>Pushgateway 推指标、Prometheus 存时序、Langfuse 记 trace 与评分；每条轨迹带批次 tag，异常 fail-loud 不静默。Grafana 面板已退役，采集与查询层保留。</p>
+          <h3>每条轨迹带批次 tag，异常不许安静</h3>
+          <p>Pushgateway 推指标、Prometheus 存时序、Langfuse 记 trace 与评分，三平面隔离所以批次互不串味。缺臂、污染样本触发 fail-loud（响亮失败）直接踢出，而不是留在台账里冒充结论。Grafana 面板已退役，采集与查询层保留。</p>
           <div class="meta">可回放 · 可定位 · 可审计</div>
         </div>
       </div>
@@ -91,39 +190,39 @@
   <section class="section" id="branches">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">Branches / 五条分支</div><h2>顺着设施的五个侧面往里看。</h2></div>
-        <p class="note">同一台机器，五条独立的叙事线：生产设施、部署流程、优化方案、评测全流程、实操心得。前四条里的机制都标了源码位置，可以当场追问；第五条只收与「用哪种方法」无关的经验，每条都能复算或已经变成一条会变红的守卫。</p>
+        <div><div class="overline">Chapters / 五个章节</div><h2>顺着这条线往里走，有五段。</h2></div>
+        <p class="note">同一台机器的五个侧面。前四段的机制都标了源码位置，可以当场追问；最后一段只收与"用哪种方法"无关的经验——每条都能复算，或者已经变成一条会变红的守卫。</p>
       </div>
       <div class="branches reveal">
         <a class="branch" href="production.html">
           <div class="top"><span class="num">01 / PRODUCTION</span><span class="arrow">→</span></div>
           <h3>生产级线上设施</h3>
-          <p>飞轮怎么转、Temporal 执行权威怎么保证恰好一次副作用、四条编排面怎么分清（路由判单循环时实跑的 / 由入口路由决定启不启动的三段式 / PoC / 只在评测 harness）、沙箱与熔断怎么兜底。</p>
-          <div class="tags"><span class="tag">飞轮</span><span class="tag">Temporal 执行权威</span><span class="tag">入口守卫 · TC-11</span><span class="tag">沙箱隔离</span></div>
+          <p>执行权威怎么保证副作用恰好一次、单写口怎么锁成红线、四条编排面怎么分清哪条实跑哪条 PoC，以及沙箱与熔断怎么兜底。第二幕的全部细节在这里。</p>
+          <div class="tags"><span class="tag">Temporal 执行权威</span><span class="tag">入口守卫 · TC-11</span><span class="tag">沙箱隔离</span></div>
         </a>
         <a class="branch" href="deploy.html">
           <div class="top"><span class="num">02 / DEPLOY</span><span class="arrow">→</span></div>
           <h3>部署与上线</h3>
-          <p>一条可重复的启动路径：锁文件安装、compose 分层、多环境档位、启动自报、灰度旗标回退。含未做到的部分。</p>
-          <div class="tags"><span class="tag">锁文件安装</span><span class="tag">compose 分层</span><span class="tag">多环境档位</span><span class="tag">灰度回退</span></div>
+          <p>一条可重复的启动路径：锁文件安装、compose 分层、多环境档位、启动自报、灰度旗标随时回退。含没做到的部分——上线这件事，缺的部分比成的部分更有信息量。</p>
+          <div class="tags"><span class="tag">锁文件安装</span><span class="tag">compose 分层</span><span class="tag">灰度回退</span></div>
         </a>
         <a class="branch" href="optimize.html">
           <div class="top"><span class="num">03 / OPTIMIZE</span><span class="arrow">→</span></div>
           <h3>优化方案</h3>
-          <p>优化不是调参，是改结构：工具结果缓存、上下文窗口降级、拓扑分层并发、预算与早停、取消信号贯通，以及把「每个任务一份工作区、每个空闲会话一个执行体」这两笔固定开销降进结构里（工作区建拆 ×214、空闲净成本≈0）。</p>
-          <div class="tags"><span class="tag">工具缓存</span><span class="tag">上下文窗口</span><span class="tag">预算早停</span><span class="tag">工作区 ×214</span><span class="tag">空闲净成本≈0</span><span class="tag">工程纪律</span></div>
+          <p>优化不是调参，是改结构：把工作区建拆从分钟级压进毫秒（×214），让空闲会话不占执行体（净成本≈0）。两笔账都同时量了反面代价，没写成无条件更快。</p>
+          <div class="tags"><span class="tag">工作区 ×214</span><span class="tag">空闲净成本≈0</span><span class="tag">反面代价</span><span class="tag">零生产调用方</span></div>
         </a>
         <a class="branch" href="eval.html">
           <div class="top"><span class="num">04 / EVALUATION</span><span class="arrow">→</span></div>
           <h3>数据管线 → 产品评测全流程</h3>
-          <p>评测不是打分，是把任务跑成产品：7 步流水线、数据管线设施、五种方法范式 rubric、评判准确性守卫，以及 proxy 与真值的口径差别。</p>
-          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">数据管线设施</span><span class="tag">按产品场景选范式</span><span class="tag">评判准确性</span></div>
+          <p>评测不是打分，是把任务跑成产品：7 步流水线、预注册协议、五种范式按产品场景选、评判准确性守卫，以及 proxy（代理指标）与真值的口径差别。</p>
+          <div class="tags"><span class="tag">7 步流水线</span><span class="tag">预注册</span><span class="tag">评判准确性</span></div>
         </a>
         <a class="branch wide" href="lessons.html">
           <div class="top"><span class="num">05 / LESSONS</span><span class="arrow">→</span></div>
           <h3>实操经验与心得 · 范式无关</h3>
-          <p>换任何方法、换任何项目都成立的那部分：计数三固定、台账就地覆写的现场实证、守卫自己也要被改坏一次、结构强制优于提示词祈祷、门槛预注册、调用方计数取证法。</p>
-          <div class="tags"><span class="tag">可复算</span><span class="tag">断言要能变红</span><span class="tag">口径 &gt; 数值</span><span class="tag">诚实边界</span></div>
+          <p>换任何方法、换任何项目都成立的那部分：计数三固定、就地覆写的现场实证、守卫自己也要被改坏一次、结构强制优于提示词祈祷、门槛预注册、调用方计数取证法。第三幕的教训都沉淀在这。</p>
+          <div class="tags"><span class="tag">可复算</span><span class="tag">断言要能变红</span><span class="tag">口径 &gt; 数值</span></div>
         </a>
       </div>
     </div>
@@ -132,8 +231,8 @@
   <section class="section" id="facts">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">By the numbers / 事实</div><h2>用数字说话。</h2></div>
-        <p class="note">四个数都能在仓库里复算，并写清各自口径：哪些是提交量、哪些是行数、哪些是评测轨迹。口径写清楚，比数字大更要紧。</p>
+        <div><div class="overline">Ledger / 账</div><h2>四个数，和它们各自的口径。</h2></div>
+        <p class="note">数字大不如数字真。每一个都能在仓库里复算，口径写清楚——口径比数值更要紧，这一点本身就是这条轨迹的一部分。</p>
       </div>
       <div class="facts reveal">
         <div class="fact"><div class="v">1,243</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-03 复算）</div></div>
@@ -143,10 +242,7 @@
       </div>
       <div class="rows reveal" style="margin-top:22px">
         <div class="row"><div class="rk">口径</div><div class="rv">1,243 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
-        <div class="row"><div class="rk">行数≠格子数</div><div class="rv">两份台账合计 <strong>206 行</strong>，按「任务 × 臂 × 批次」去重后只有 <strong>81 个格子</strong>（重复率 154.3%）。10-30 那句「76/76 全有判分、零缺口」就是这么来的：数了行、宣布了格子、中间漏了去重。台账还没有运行标识列，4 / 81 个格子的两次运行塌缩成同一行。</div></div>
-        <div class="row"><div class="rk">本轮新增</div><div class="rv">2026-11-02 把两条分工写成代码与守卫：装配顺序固定为<strong>角色段 → 任务正文 → 上游输入</strong>；相位写权——计划与审查角色<strong>不能改动执行者的交付本体</strong>，缺陷以 <code>REWORK</code> 行回流。29 项检查跑绿，8 种改坏全部变红。</div></div>
-        <div class="row"><div class="rk">结构降本</div><div class="rv">2026-11-03 把两笔固定开销量进结构里。<strong>工作区</strong>：真实仓库（5,305 个跟踪文件）先证逐字节等价（<code>PARITY_OK</code>、<code>diffs = []</code>）再比——provider 抽象出三后端，overlay 挂载 <strong>28ms vs 64,864ms</strong>、卸载 <strong>92ms vs 165,691ms</strong>、全链路 <strong>1,132ms vs 242,111ms（×214）</strong>；LayerFS 在本机跑通（自建 sealed bundle → WSL2 worker → 容器 FUSE）后一轮 <code>fork+mount+unmount</code> <strong>≈45–260ms</strong>，对照同仓 worktree 建拆 <strong>≈230,555ms</strong>，一次性导入 5,327 文件 132s 就回本——<strong>但同一批实测也量了反面</strong>：每次文件操作经容器 <code>exec</code> 中位 <strong>240ms</strong>，宿主直读同一批文件中位 <strong>1ms</strong> ⇒ 便宜的是建/拆，贵的是每一次访问，两头都写进结论。<strong>空闲侧</strong>：移植挂起运行时（<code>src/lib/agent-runtime/</code>，1,042 行，12 项守卫直接断言「队列空 ⇒ 无常驻 driver」），规模实测 2000 agent × 5 轮：内存态 idle <strong>17.8 KiB/agent</strong>、冷唤醒 <strong>72ms</strong>；历史落盘态 idle RSS <strong>49.3MiB 低于 63.7MiB 基线</strong>（空闲净成本≈0），代价是冷唤醒均值 <strong>8.36s</strong>。<strong>三者都还没接管默认执行路径</strong>（默认仍是 <code>git-worktree</code>，overlay 只被评测 harness 直接消费，<code>resolveProvider</code> 与 agent-runtime 在 <code>src/</code>+<code>scripts/</code> 零生产调用方）⇒ 写的是结构收益，不是线上收益。</div></div>
-        <div class="row"><div class="rk">未落地</div><div class="rv">81 个任务里 <strong>41 个从未执行</strong>，这是配对数不足的唯一根因；组合范式臂至今 <strong>0 行</strong>入账，本轮只修掉它三个会静默失败的前提；跳步 / 返工仍是执行段自报的 proxy 口径；评测面那条动态路由 96% 停在只记录不生效的影子模式；三段式编排 2026-11-02 起由入口路由决定启不启动，但<strong>这条分流还没有达标证据</strong>——它引用的那一格复算是 +0.083 / p=0.625（未过显著性）而代价实测 prompt token +71%，分档阈值也未校准；复审大脑在当前网关上有间歇输出不可解析（按失败闭口处理）。跨 judge 漂移：dp-007 双臂 ≤0.01，最大 +0.15（n=4）。<strong>11-03 新接的几个面要分档看，别一句「都没生效」带过</strong>：worker 那一面<strong>目前只有判定</strong>——纯函数三选一（只答 / 维持 / 起新）加 8 项测试，但 <code>decideWorkerLifecycle</code> 除自身测试外零生产消费方、起跑派发函数 <code>dispatchProjectWorkers</code> 全仓零定义 ⇒ 还没有真 worker 被这个判定拉起；<strong>建项目派发层已经接线、只是门缺省关</strong>（<code>src/lib/router/provision.ts</code> 建项目并绑会话，由分诊管线 <code>task-pipeline.ts:217</code> 在 <code>new_project</code> 判定上调用，<code>APEX_ROUTER_AUTO_CREATE_PROJECT</code> 关时判定只写进任务体）；座位模型三张都进了 INPUT（<code>APEX_SEAT_MODEL_PLANNER / _EXECUTER / _REVIEWER</code>），不配就沿用本次 run 的 model，<strong>但执行器的角色名是无条件带的</strong> ⇒ 决策提示词默认已被改，这一处没有"缺省不变形"可讲；再加真工作流证据那条集成测试<strong>不在守卫清单的 77 条里</strong>、只能手动跑。AI 研判门（<code>APEX_ROUTER_ASSESSMENT</code>，阈值 0.5 未校准）与项目路由门（<code>APEX_ROUTER_SIDEBAR</code>）都缺省 shadow ⇒ 只记录、不改行为。</div></div>
+        <div class="row"><div class="rk">别信大数</div><div class="rv">这一栏里的每个数都有日期和复算命令，因为「没有口径」这件事我自己犯过（见第三幕）。守卫清单会长，所以带日期比带数值有用。</div></div>
       </div>
     </div>
   </section>
@@ -154,12 +250,12 @@
   <section class="section" id="contact">
     <div class="wrap">
       <div class="section-head reveal">
-        <div><div class="overline">Contact / 联系</div><h2>如果你也在做长任务智能体。</h2></div>
-        <p class="note">聊轨迹、聊评测、聊怎么让智能体从失败里变强——都欢迎。</p>
+        <div><div class="overline">Contact / 联系</div><h2>如果你也在管一类会谎报完成的系统。</h2></div>
+        <p class="note">聊轨迹、聊评测、聊怎么让一套系统连作者本人都不放过——都欢迎。带上链接和上下文，直接说事。</p>
       </div>
       <div class="rows reveal">
-        <div class="row"><div class="rk">GITHUB</div><div class="rv"><a href="https://github.com/DizhenLiang" style="color:var(--accent)">github.com/DizhenLiang</a> · Apex-Agent 的源码与轨迹</div></div>
-        <div class="row"><div class="rk">EMAIL</div><div class="rv">liangdizhen@qq.com · 直接说事，带上链接和上下文</div></div>
+        <div class="row"><div class="rk">GITHUB</div><div class="rv"><a href="https://github.com/DizhenLiang" style="color:var(--accent)">github.com/DizhenLiang</a> · Apex-Agent 的源码与轨迹（代码仓未公开，公网证据层是这个主页）</div></div>
+        <div class="row"><div class="rk">EMAIL</div><div class="rv">liangdizhen@qq.com</div></div>
         <div class="row"><div class="rk">OPEN TO</div><div class="rv">智能体基础设施 · 评测体系 · 长任务系统的工程化落地</div></div>
       </div>
     </div>
@@ -170,7 +266,7 @@
   <div class="wrap">
     <div class="grid">
       <div class="who"><strong>梁迪臻</strong> · Apex-Agent 作者 · 一个人，一套设施</div>
-      <div class="links"><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="lessons.html">心得</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
+      <div class="links"><a href="#story">这条轨迹</a><a href="production.html">生产设施</a><a href="deploy.html">部署</a><a href="optimize.html">优化</a><a href="eval.html">评测</a><a href="lessons.html">心得</a><a href="https://github.com/DizhenLiang">GitHub</a></div>
     </div>
     <div class="fine">轨迹不是日志，是证据。© 2026 梁迪臻</div>
   </div>
