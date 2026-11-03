@@ -238,7 +238,7 @@
         <div class="fact"><div class="v">1,250</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-03 复算）</div></div>
         <div class="fact"><div class="v">258,283</div><div class="l">行自研代码（src+tests+scripts，1,040 个文件，单遍求和）</div></div>
         <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹（台账去重后 81 个格子）</div></div>
-        <div class="fact"><div class="v">77</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数，2026-11-03 实测）</div></div>
+        <div class="fact"><div class="v">78</div><div class="l">条 <code>test:guards</code> 守卫（<code>run-guards.mjs</code> 可数，2026-11-03 实测）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
         <div class="row"><div class="rk">口径</div><div class="rv">1,250 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
