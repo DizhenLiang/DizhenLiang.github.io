@@ -97,7 +97,7 @@
                 <p><strong>入口</strong>：<code>harness-bridge.publishTask</code> → <code>dispatchIngress</code>（默认拒绝白名单，唯一接入点）→ <code>startWorkflowIdempotent</code>，<strong>无中间队列中转</strong>；Temporal 不可达则 fail-closed，不回退 PG。task queue（任务队列）<code>apex-orchestrator</code> / <code>apex-side-effects</code> 即传输 + 执行层。</p>
                 <p><strong>调度面</strong>：平台 cron <strong>没有进程内守护</strong>，执行面就是 Temporal Schedule——<code>automation-scheduler.ts:224</code> <code>client.schedule.create</code>，action 指向 <code>apexCronJobRun</code>。2026-11-03 无 Docker 实测 worker 起来即 <span class="n">automation schedule reconcile: synced=1/1</span>。</p>
                 <p><strong>单写</strong>：TC-11 四层卡口 = 字面量/行扫描（正则命中 <code>INSERT INTO|UPDATE (session_tree|activity_results)</code>，出现在 <code>projection/sync.ts</code> 之外即红）+ import 边界扫描 + 运行时 fail-closed + worker 在场校验；<span class="n">5 个</span>故障注入测试串跑（41 处断言）。</p>
-                <p><strong>Kafka 的诚实位置</strong>：代码、compose、pm2 三条腿齐，但门在 <code>harness-bridge.ts:27-28</code> 要求 <code>KAFKA_INGRESS_ENABLED==="true"</code> <em>且</em> <code>KAFKA_INGRESS_MODE==="kafka"</code>，实测 <code>.env</code> 里 <code>grep KAFKA</code> <strong>零命中</strong> ⇒ 三道门全关，今天是旁路而非链路。2026-11-03 把「能翻成 on 之前必须先兑现」的三处补齐：① 生产侧真 fail-closed（此前 broker 挂了照样返回成功 ack），② 派生投影表 <code>projection_activity_results</code> 有人建（此前全仓只有写方没有建方 ⇒ 新库第一条投影就 42P01 进死信），③ 三段式编排进默认拒绝白名单并补上命令面腿（此前该类型会被「确认并丢弃」，看着像没有流量）。46 项守卫单跑 <code>PASS 46 / FAIL 0</code>；<strong>但运行时一格没翻</strong>，而且入库也只走了一步——② 的代码连同 runbook 进了提交，①③ 与并发会话的在飞改动交叉（<code>git status</code> 为 <code>MM</code>），守卫文件仍未跟踪 ⇒ 按提交纪律排队。边界写在 <code>docs/kafka-runbook.md</code> §7，含一条被探针证伪的自拟理由。</p>
+                <p><strong>Kafka 的诚实位置</strong>：代码、compose、pm2 三条腿齐，但门在 <code>harness-bridge.ts:27-28</code> 要求 <code>KAFKA_INGRESS_ENABLED==="true"</code> <em>且</em> <code>KAFKA_INGRESS_MODE==="kafka"</code>，实测 <code>.env</code> 里 <code>grep KAFKA</code> <strong>零命中</strong> ⇒ 生效路径仍是直连，今天是旁路而非链路。<strong>2026-11-06 复算：「能翻成 on 之前必须先兑现」的三条硬前提已全部进 tip</strong>——① 生产侧真 fail-closed（此前 broker 挂了照样返回成功 ack）与 ③ 三段式编排进默认拒绝白名单 + 命令面腿同进 <code>f2e7dbc8</code>；② 派生投影表 <code>projection_activity_results</code> 建表 runbook 进 <code>64d6ed85</code>；守卫文件 <code>4cca6da8</code>。<code>tests/kafka-production-readiness.test.ts</code> 现 <span class="n">442</span> 行 / <span class="n">46</span> 处断言（HEAD 与工作树一致，<code>git show HEAD:tests/kafka-production-readiness.test.ts | wc -l</code> 复算）。边界写在 <code>docs/kafka-runbook.md</code> §7，含一条被探针证伪的自拟理由。</p>
                 <p><strong>人在环信号</strong>：<code>humanApproval</code>（<code>planExecuteReview.ts:92</code>）与 <code>agentHumanApproval</code>（<code>agentLoop.ts:79</code>）在 <code>src/</code> <strong>零发送方</strong>——全仓唯一的 <code>handle.signal(</code> 在测试夹具里。处理器定义了，没人按。</p>
               </div>
             </details>
@@ -132,7 +132,7 @@
           <div>
             <h3>我知道自己停在哪，并且把它写进正文。</h3>
             <div class="prose">
-              <p>设施现在的真实形状是：<strong>执行面活着，判断面还在门槛外</strong>。要不要起一张工作座位，我已经写成纯函数（三选一：只答 / 维持 / 起新）并有测试；但那个判定<strong>除自身测试外没有生产消费方</strong>，起跑派发的函数全仓零定义 ⇒ 还没有真 worker 被它拉起。两条路由门都缺省 shadow（只记录、不改行为），动态路由 <span class="n">96%</span> 的任务仍走全拓扑——那个"预估省 43%"是影子读数，不是已实现收益。</p>
+              <p>设施现在的真实形状是：<strong>执行面活着，判断面还在门槛外</strong>。要不要起一张工作座位，我已经写成纯函数（三选一：只答 / 维持 / 起新）并有测试；但那个判定<strong>除自身测试外没有生产消费方</strong>，起跑派发的函数 <code>dispatchProjectWorkers</code> 全仓零定义 ⇒ 还没有真 worker 被<strong>这条判定</strong>拉起。另有一条 2026-11-05 落地的 run 派发链已经在跑，两件事不能混成一句：入口 <code>route.ts:1019-1022</code> 真调 <code>dispatchRouterRun</code>（<code>src/lib/temporal/router/dispatch.ts:48</code>：先 <code>enqueueRouterRun</code> 落 PG 取权威性，再对每个 executor <code>signalWithStart</code> 唤醒 <code>apex-router-worker</code>，Temporal 不可用直接抛出即 fail-closed），执行侧用 PG 的 <code>FOR UPDATE SKIP LOCKED</code> 抢占 claim（<code>src/lib/temporal/router/queue.ts:147</code>）。按数据切流的两道门（<code>APEX_ROUTER_ASSESSMENT</code>／<code>APEX_ROUTER_SIDEBAR</code>）缺省 shadow（只记录、不改行为）；三段式那条生产入口路由 <code>APEX_TOPOLOGY_ROUTER</code> 代码缺省<strong>active</strong>（2026-11-06 复算，<code>topology-router.ts:150-156</code>），本机 <code>.env</code>／<code>.env.local</code>／docker-compose 均未 pin；评测侧 <code>scripts/paradigm-ab-router.ts:179</code> 仍是 shadow，动态路由 <span class="n">96%</span> 的任务仍走全拓扑——那个"预估省 43%"是影子读数，不是已实现收益。</p>
               <p>配对数不足也有唯一根因，不好听但清楚：81 个任务里 <strong>41 个从未执行</strong>。而这一切此刻还压在一种依赖上——现场地址不可达。<em>2026-11-03</em> 同一天量了两次，结论不同：早间 Docker 引擎无响应、数据库端口连测三次拒连，我把根因记在宿主页面的地基（<em>要 4GB 的虚拟机，本机总量 7,103MB、实测可用 458MB</em>）；午后复测引擎已经活着（四个基础设施容器全 healthy），可用内存反而只剩 253MB——"内存不够所以栈起不来"于是只能算相关，不算证明。站点仍不可达，但断点换了位置：本机 Web 面（<code>:3000</code>）没起，到 Vercel（前端托管的边缘）的连接被重置。同一个地址、两次实测指着两个断点，所以我把它写成两次，而不是挑一次讲成故事。</p>
               <p>我不打算把这些藏进脚注。一份只讲做成的简历，和一台只会报成功的 agent，是同一种病。</p>
             </div>
@@ -142,7 +142,7 @@
                 <p><strong>未生效</strong>：动态路由 96% 影子模式，预估收益是影子读数；三段式 Plan-Execute-Review 自 2026-11-02 起由入口路由决定启不启动、两臂都有真实请求跑通，但它押的那格 +0.083 / p=0.625 未过显著性、代价 prompt token +71%、分档阈值 <code>T_SIMPLE=30</code> 未校准；planner→executor→reviewer 的<strong>写权</strong>拓扑仍只在评测 harness（<code>src/</code> 零调用），生产侧 reviewer 是只读座位；四范式引擎 <code>registry.json</code> 已入库但总开关默认 <code>enabled: false</code>；预注册 <code>k_per_task=3</code> 从未执行、<code>registration.json</code> 的 <code>locked_at</code> 仍是 <code>PRE-RUN</code> ⇒ 当前所有 p 值与 promote 级结论无效。</p>
                 <p><strong>结构收益 ≠ 线上收益</strong>：工作区三后端里默认执行路径仍是 <code>git-worktree</code>，overlay 只被评测 harness 直接消费，<code>resolveProvider</code> 与 agent-runtime 在 <code>src/</code>+<code>scripts/</code> <strong>零生产调用方</strong>。实测倍数（本地）：全链路 <span class="n">1,132ms vs 242,111ms（×214）</span>；空闲挂起运行时 2000 agent × 5 轮，idle 常驻 <span class="n">17.8 KiB/agent</span>、冷唤醒 <span class="n">72ms</span>，落盘态 idle RSS <span class="n">49.3MiB &lt; 63.7MiB 基线</span>、代价冷唤醒均值 <span class="n">8.36s</span>。同一批实测也量了反面：每次文件操作经容器 <code>exec</code> 中位 <span class="n">240ms</span>，宿主直读同一批文件中位 <span class="n">1ms</span> ⇒ 便宜的是建/拆，贵的是每一次访问。</p>
                 <p><strong>卫生项</strong>：台账写入仍是就地覆写（无锁、无 temp+rename），消费者可读到中间态，已列为待修；<code>:7233</code> 上现在挂的是评测用临时 dev server，不是生产 Temporal，别按端口臆断现场可达。</p>
-                <p><strong>守卫会长，而且同一个「条数」有三个口径</strong>，所以数值必须带日期与复算命令：2026-11-03 傍晚实测 <code>scripts/run-guards.mjs</code> 的 GUARDS 数组 <strong>HEAD 74 条 / 本地工作树 79 条</strong>（同日早间读数 77——清单当天在长），差的那 5 条登记还在并发会话的在飞索引里没入库；元门禁 <code>guard-coverage</code> 报的 <strong>78</strong> 是第三种口径（79 条里 1 条指向 <code>src/lib/platform/hitl.test.ts</code>，不在 <code>tests/</code> 下）。⇒ 别人 clone 下来复算得到的是 <strong>74</strong>，对外只报这个数并注明在飞 5 条。另注：<code>guard-coverage</code> 是「读源码文件」的守卫，2026-11-03 曾被同工作树里另一会话的一次提交采到半写快照、报出假红（同一批守卫那一轮明明执行过它们），单跑立刻绿——所以清单红先复跑单文件，再谈改代码。仓内记录的最近一次全量实跑 67/68（那份记录时清单是 68 条——分母跟着清单长，两个数得一起看）。</p>
+                <p><strong>守卫会长，而且同一个「条数」有三种口径</strong>，所以数值必须带日期与复算命令：2026-11-06 复算 <code>scripts/run-guards.mjs</code> 的 GUARDS 数组 <strong>HEAD 85 条 / 当日工作树 86 条</strong>（多的 1 条 <code>tests/temporal-router-plane.test.ts</code> 还在未提交状态）；元门禁 <code>guard-coverage</code> 是第三种口径（读源码文件的那条守卫，与 GUARDS 数组不同计数面）。⇒ 别人 clone 下来复算得到的是 <strong>85</strong>，对外只报这个数并注明在飞 1 条；<code>node scripts/run-guards.mjs --list | wc -l</code> = 86 是当前工作树读数。历史注脚：2026-11-03 同日工作树 77→78→79 三天连涨、元门禁报 78（79 里 1 条指向 <code>src/lib/platform/hitl.test.ts</code>，不在 <code>tests/</code> 下）——那一次 <code>guard-coverage</code> 曾被同工作树里另一会话的提交采到半写快照、报出假红（同一批守卫那一轮明明执行过它们），单跑立刻绿——所以清单红先复跑单文件，再谈改代码。仓内记录的最近一次全量实跑 67/68（那份记录时清单是 68 条——分母跟着清单长，两个数得一起看）。</p>
               </div>
             </details>
           </div>
@@ -175,7 +175,7 @@
           <div class="k">03 / 收口</div>
           <h3>卡死、重复、静默错，各有专门的东西接住</h3>
           <p>核心 run 靠重放 + 幂等键而不是盲重试；卡死由 claim TTL / 心跳陈旧 / 崩溃检测 + Temporal 超时收口，worker 另有 watchdog（看门狗）重拉。<strong>判活只认 pollers，不认端口</strong>——这条是 III 幕那次教训换来的。</p>
-          <div class="meta">26 项 judge 完整性守卫 · 74 条守门清单已入库可复算 · 熔断默认连续 2 次</div>
+          <div class="meta">26 项 judge 完整性守卫 · 85 条守门清单已入库可复算（HEAD，2026-11-06）· 熔断默认连续 2 次</div>
         </div>
         <div class="card">
           <div class="k">04 / 可观测</div>
@@ -235,13 +235,13 @@
         <p class="note">数字大不如数字真。每一个都能在仓库里复算，口径写清楚——口径比数值更要紧，这一点本身就是这条轨迹的一部分。</p>
       </div>
       <div class="facts reveal">
-        <div class="fact"><div class="v">1,253</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-03 复算）</div></div>
+        <div class="fact"><div class="v">1,295</div><div class="l">次提交（<code>git rev-list --count HEAD</code>，2026-11-06 复算）</div></div>
         <div class="fact"><div class="v">269,540</div><div class="l">行自研代码（src+tests+scripts，1,084 个文件，单遍求和）</div></div>
         <div class="fact"><div class="v">38<span class="u">×</span>2</div><div class="l">任务 × 臂 = 76 条轨迹（台账去重后 81 个格子）</div></div>
-        <div class="fact"><div class="v">74</div><div class="l">条守门清单<strong>已入库</strong>（HEAD 的 <code>run-guards.mjs</code> GUARDS 数组可复算；工作树在飞另有 5 条登记未进 HEAD，2026-11-03 实测）</div></div>
+        <div class="fact"><div class="v">85</div><div class="l">条守门清单<strong>已入库</strong>（HEAD 的 <code>run-guards.mjs</code> GUARDS 数组可复算；当日工作树 86 条，多 1 条未提交的 <code>tests/temporal-router-plane.test.ts</code>，2026-11-06 实测）</div></div>
       </div>
       <div class="rows reveal" style="margin-top:22px">
-        <div class="row"><div class="rk">口径</div><div class="rv">1,253 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
+        <div class="row"><div class="rk">口径</div><div class="rv">1,295 是提交数不是任务数，真实跑过的唯一任务 38 个。代码行数不等于测试执行次数：git 跟踪的测试文件 <strong>168</strong> 个（<code>*.test.ts/.tsx/.mts</code>，2026-11-03 复算）、用例声明 1,050 条（按行首 <code>it(</code>/<code>test(</code> 计数，换定义就不是同一个数）、API 路由 61 个。行数必须单遍求和——<code>xargs wc -l | tail -1</code> 会把清单拆批、每批各打一个 total，同一范围实测只剩 71,506。</div></div>
         <div class="row"><div class="rk">别信大数</div><div class="rv">这一栏里的每个数都有日期和复算命令，因为「没有口径」这件事我自己犯过（见第三幕）。守卫清单会长，所以带日期比带数值有用。</div></div>
       </div>
     </div>
